@@ -72,7 +72,7 @@ internal sealed class AsbWorker : IHostedService
                     .ConfigureAwait(false)
                     .GetAwaiter()
                     .GetResult();
-                
+
                 processor.ProcessMessageAsync += async args =>
                     await ProcessMessage(saga, listener, args);
 
@@ -150,7 +150,7 @@ internal sealed class AsbWorker : IHostedService
         var correlationId = ex!.CorrelationId;
 
         var implSaga = await GetConcreteSaga(sagaType, listenerType, correlationId)
-                .ConfigureAwait(false);
+            .ConfigureAwait(false);
 
         var broker = BrokerFactory.Get(_serviceProvider, sagaType, implSaga, listenerType,
             correlationId);
@@ -167,10 +167,10 @@ internal sealed class AsbWorker : IHostedService
         try
         {
             var saga = await GetConcreteSaga(sagaType, listenerType, correlationId)
-                    .ConfigureAwait(false);
+                .ConfigureAwait(false);
 
             var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType,
-                correlationId);
+                (saga as ISaga)!.CorrelationId);
 
             var asbMessage = await broker.Handle(args.Message.Body, args.CancellationToken)
                 .ConfigureAwait(false);
@@ -192,7 +192,7 @@ internal sealed class AsbWorker : IHostedService
 
                 _cache.Upsert(correlationId, saga);
             }
-            
+
             await _messageEmitter.FlushAll(broker.Collector, args.CancellationToken)
                 .ConfigureAwait(false);
         }
@@ -202,8 +202,8 @@ internal sealed class AsbWorker : IHostedService
              * exception caught here is always TargetInvocationException
              * since every saga's handle method is called by reflection
              * the actual exception should be stored in InnerException
-             */ 
-            
+             */
+
             if (ex.InnerException is AsbException) throw;
             throw new AsbException
             {
@@ -220,12 +220,12 @@ internal sealed class AsbWorker : IHostedService
 
     private static async Task<Guid> GetCorrelationId(ProcessMessageEventArgs args)
     {
-        var corrId = await Serializer.Deserialize<DeserializeCorrelationId>(
+        var dto = await Serializer.Deserialize<DeserializeCorrelationId>(
                 args.Message.Body.ToStream(),
                 cancellationToken: args.CancellationToken)
             .ConfigureAwait(false);
 
-        return corrId.CorrelationId;
+        return dto.CorrelationId;
     }
 
     private async Task<object?> GetConcreteSaga(SagaType sagaType, SagaHandlerType listenerType,
@@ -254,13 +254,20 @@ internal sealed class AsbWorker : IHostedService
 
         saga = ActivatorUtilities.CreateInstance(_serviceProvider, sagaType.Type);
 
-        _sagaBehaviour.SetCorrelationId(sagaType, correlationId, saga);
+        if ((saga as ISaga)!.CorrelationId != Guid.Empty)
+        {
+            correlationId = (saga as ISaga)!.CorrelationId;
+        }
+        else
+        {
+            _sagaBehaviour.SetCorrelationId(sagaType, correlationId, saga);
+        }
 
         _sagaBehaviour.HandleCompletion(sagaType, correlationId, saga);
 
         return _cache.Set(correlationId, saga);
     }
-    
+
     private static bool UsesHeavies(IAsbMessage asbMessage)
     {
         return HeavyIo.IsHeavyConfigured()

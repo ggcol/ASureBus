@@ -5,20 +5,28 @@ using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.Messaging;
 
+[TestFixture]
 public class MessagingContextInternalTests
 {
+    private MessagingContextInternal _messagingContext;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _messagingContext = new MessagingContextInternal();
+    }
+    
     [Test]
     public async Task Send_ShouldEnqueueMessage()
     {
         // Arrange
         var message = new Mock<IAmACommand>();
-        var messagingContext = new MessagingContextInternal();
 
         // Act
-        await messagingContext.Send(message.Object);
+        await _messagingContext.Send(message.Object);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -27,13 +35,13 @@ public class MessagingContextInternalTests
         // Arrange
         var message = new Mock<IAmACommand>();
         var options = new SendOptions();
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.Send(message.Object, options);
+        await _messagingContext.Send(message.Object, options);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -45,13 +53,13 @@ public class MessagingContextInternalTests
         {
             ScheduledTime = DateTimeOffset.UtcNow.AddSeconds(10)
         };
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.Send(message.Object, options);
+        await _messagingContext.Send(message.Object, options);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -60,13 +68,13 @@ public class MessagingContextInternalTests
         // Arrange
         var message = new Mock<IAmACommand>();
         var delay = TimeSpan.FromMinutes(10);
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.SendAfter(message.Object, delay);
+        await _messagingContext.SendAfter(message.Object, delay);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -74,13 +82,13 @@ public class MessagingContextInternalTests
     {
         // Arrange
         var message = new Mock<IAmAnEvent>();
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.Publish(message.Object);
+        await _messagingContext.Publish(message.Object);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -89,13 +97,13 @@ public class MessagingContextInternalTests
         // Arrange
         var message = new Mock<IAmAnEvent>();
         var options = new PublishOptions();
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.Publish(message.Object, options);
+        await _messagingContext.Publish(message.Object, options);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -107,13 +115,13 @@ public class MessagingContextInternalTests
         {
             ScheduledTime = DateTimeOffset.UtcNow.AddSeconds(10)
         };
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.Publish(message.Object, options);
+        await _messagingContext.Publish(message.Object, options);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
     }
 
     [Test]
@@ -122,12 +130,25 @@ public class MessagingContextInternalTests
         // Arrange
         var message = new Mock<IAmAnEvent>();
         var delay = TimeSpan.FromMinutes(10);
-        var messagingContext = new MessagingContextInternal();
+        
 
         // Act
-        await messagingContext.PublishAfter(message.Object, delay);
+        await _messagingContext.PublishAfter(message.Object, delay);
 
         // Assert
-        Assert.That(messagingContext.Messages, Has.Count.EqualTo(1));
+        Assert.That(_messagingContext.Messages, Has.Count.EqualTo(1));
+    }
+    
+    [Test]
+    public void Bind_ShouldSetCorrelationId()
+    {
+        //Arrange
+        var correlationId = Guid.NewGuid();
+        
+        //Act
+        _messagingContext.Bind(correlationId);
+        
+        //Assert
+        Assert.That(_messagingContext.CorrelationId, Is.EqualTo(correlationId));
     }
 }

@@ -9,6 +9,8 @@ public interface IMessagingContext
     public Task Send<TCommand>(TCommand message, CancellationToken cancellationToken = default)
         where TCommand : IAmACommand;
 
+    public IMessagingContext Bind(Guid correlationId);
+
     public Task Send<TCommand>(TCommand message, SendOptions options,
         CancellationToken cancellationToken = default)
         where TCommand : IAmACommand;

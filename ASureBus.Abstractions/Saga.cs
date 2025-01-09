@@ -11,7 +11,7 @@ public abstract class Saga<T> : ISaga
     where T : SagaData, new()
 {
     public T SagaData { get; internal set; } = new();
-    public Guid CorrelationId { get; set; }
+    public Guid CorrelationId { get; set; } = Guid.Empty;
     public event EventHandler<SagaCompletedEventArgs>? Completed;
     public bool IsComplete { get; private set; }
     

@@ -6,6 +6,12 @@ namespace ASureBus.Core.Messaging;
 internal sealed class MessagingContext(IMessageEmitter emitter)
     : CollectMessage, IMessagingContext
 {
+    public IMessagingContext Bind(Guid correlationId)
+    {
+        CorrelationId = correlationId;
+        return this;
+    }
+    
     public Task Send<TCommand>(TCommand message, CancellationToken cancellationToken = default)
         where TCommand : IAmACommand
     {

@@ -149,4 +149,17 @@ public class MessagingContextTests
             e => e.FlushAll(It.IsAny<ICollectMessage>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Test]
+    public void Bind_ShouldSetCorrelationId()
+    {
+        //Arrange
+        var correlationId = Guid.NewGuid();
+        
+        //Act
+        _messagingContext.Bind(correlationId);
+        
+        //Assert
+        Assert.That(_messagingContext.CorrelationId, Is.EqualTo(correlationId));
+    }
 }
