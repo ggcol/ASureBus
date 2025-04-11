@@ -13,42 +13,29 @@ internal sealed class MessageEmitter(IAzureServiceBusService serviceBusService)
     {
         while (collector.Messages.Count != 0)
         {
-            try
+            var asbMessage = collector.Messages.First();
+
+            var destination = asbMessage.IsCommand
+                ? await serviceBusService
+                    .ConfigureQueue(asbMessage.Destination, cancellationToken)
+                    .ConfigureAwait(false)
+                : await serviceBusService
+                    .ConfigureTopicForSender(asbMessage.Destination, cancellationToken)
+                    .ConfigureAwait(false);
+
+            if (asbMessage.IsScheduled)
             {
-                var asbMessage = collector.Messages.First();
-
-                var destination = asbMessage.IsCommand
-                    ? await serviceBusService
-                        .ConfigureQueue(asbMessage.Destination, cancellationToken)
-                        .ConfigureAwait(false)
-                    : await serviceBusService
-                        .ConfigureTopicForSender(asbMessage.Destination, cancellationToken)
-                        .ConfigureAwait(false);
-
-                if (asbMessage.IsScheduled)
-                {
-                    await EmitScheduled(asbMessage, destination, asbMessage.ScheduledTime!.Value, 
-                            cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    await Emit(asbMessage, destination, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-
-                collector.Messages.Dequeue();
+                await EmitScheduled(asbMessage, destination, asbMessage.ScheduledTime!.Value,
+                        cancellationToken)
+                    .ConfigureAwait(false);
             }
-            catch (Exception ex)
-                /*
-                 * May be:
-                 * - ServiceBusException (message exceed maximum size)
-                 * - SerializationException (non-parsable token)
-                 * - ArgumentException (error in sb connection string)
-                 */
+            else
             {
-                //TODO notify maintenance - save message for future reference
+                await Emit(asbMessage, destination, cancellationToken)
+                    .ConfigureAwait(false);
             }
+
+            collector.Messages.Dequeue();
         }
     }
 

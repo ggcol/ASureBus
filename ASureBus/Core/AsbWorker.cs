@@ -1,4 +1,5 @@
-﻿using ASureBus.Abstractions;
+﻿using System.Runtime.Serialization;
+using ASureBus.Abstractions;
 using ASureBus.Accessories.Heavy;
 using ASureBus.Core.Caching;
 using ASureBus.Core.Enablers;
@@ -13,6 +14,7 @@ using ASureBus.Utils;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace ASureBus.Core;
 
@@ -23,6 +25,7 @@ internal sealed class AsbWorker : IHostedService
     private readonly IMessageEmitter _messageEmitter;
     private readonly IAsbCache _cache;
     private readonly ISagaBehaviour _sagaBehaviour;
+    private readonly ILogger<AsbWorker> _logger;
 
     private readonly ISagaIO? _sagaIo = AsbConfiguration.OffloadSagas
         ? new SagaIO()
@@ -38,13 +41,15 @@ internal sealed class AsbWorker : IHostedService
         IMessageEmitter messageEmitter,
         ITypesLoader typesLoader,
         IAsbCache cache,
-        ISagaBehaviour sagaBehaviour)
+        ISagaBehaviour sagaBehaviour, 
+        ILogger<AsbWorker> logger)
     {
         _hostApplicationLifetime = hostApplicationLifetime;
         _serviceProvider = serviceProvider;
         _messageEmitter = messageEmitter;
         _cache = cache;
         _sagaBehaviour = sagaBehaviour;
+        _logger = logger;
 
         foreach (var handler in typesLoader.Handlers)
         {
@@ -124,23 +129,44 @@ internal sealed class AsbWorker : IHostedService
     {
         var correlationId = await GetCorrelationId(args);
 
-        var broker = BrokerFactory.Get(_serviceProvider, handlerType, correlationId);
-
-        var asbMessage = await broker
-            .Handle(args.Message.Body, args.CancellationToken)
-            .ConfigureAwait(false);
-
-        if (UsesHeavies(asbMessage))
+        try
         {
-            await DeleteHeavies(asbMessage, args.CancellationToken).ConfigureAwait(false);
+            var broker = BrokerFactory.Get(_serviceProvider, handlerType, correlationId);
+
+            var asbMessage = await broker
+                .Handle(args.Message.Body, args.CancellationToken)
+                .ConfigureAwait(false);
+
+            if (UsesHeavies(asbMessage))
+            {
+                await DeleteHeavies(asbMessage, args.CancellationToken).ConfigureAwait(false);
+            }
+
+            await args
+                .CompleteMessageAsync(args.Message, args.CancellationToken)
+                .ConfigureAwait(false);
+
+            await _messageEmitter.FlushAll(broker.Collector, args.CancellationToken)
+                .ConfigureAwait(false);
         }
-
-        await args
-            .CompleteMessageAsync(args.Message, args.CancellationToken)
-            .ConfigureAwait(false);
-
-        await _messageEmitter.FlushAll(broker.Collector, args.CancellationToken)
-            .ConfigureAwait(false);
+        catch (ServiceBusException sbEx)
+        {
+            _logger.LogCritical(
+                sbEx, 
+                "Message {MessageId} is going to be lost",
+                args.Message.MessageId);
+        }
+        catch (Exception ex)
+            when (ex is SerializationException
+                      or ArgumentException)
+        {
+            await args.DeadLetterMessageAsync(
+                    args.Message,
+                    ex.GetType().Name,
+                    ex.Message,
+                    args.CancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 
     private async Task ProcessError(SagaType sagaType, SagaHandlerType listenerType,
@@ -195,6 +221,13 @@ internal sealed class AsbWorker : IHostedService
 
             await _messageEmitter.FlushAll(broker.Collector, args.CancellationToken)
                 .ConfigureAwait(false);
+        }
+        catch (ServiceBusException sbEx)
+        {
+            _logger.LogCritical(
+                sbEx, 
+                "Message {MessageId} is going to be lost",
+                args.Message.MessageId);
         }
         catch (Exception ex)
         {

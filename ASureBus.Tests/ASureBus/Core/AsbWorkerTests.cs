@@ -8,6 +8,7 @@ using ASureBus.Core.TypesHandling.Entities;
 using ASureBus.Services.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace ASureBus.Tests.ASureBus.Core;
 
@@ -51,7 +52,8 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>());
+            Mock.Of<ISagaBehaviour>(),
+            Mock.Of<ILogger<AsbWorker>>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -107,7 +109,8 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>());
+            Mock.Of<ISagaBehaviour>(),
+            Mock.Of<ILogger<AsbWorker>>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -154,7 +157,8 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>());
+            Mock.Of<ISagaBehaviour>(),
+            Mock.Of<ILogger<AsbWorker>>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -210,7 +214,8 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>());
+            Mock.Of<ISagaBehaviour>(),
+            Mock.Of<ILogger<AsbWorker>>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
