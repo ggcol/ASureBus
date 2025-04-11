@@ -22,7 +22,9 @@ internal abstract class BrokerBehavior<TMessage>(
                 cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        if (HeavyIo.IsHeavyConfigured())
+        if (!HeavyIo.IsHeavyConfigured()) return asbMessage;
+        
+        if (asbMessage.Heavies is not null && asbMessage.Heavies.Any())
         {
             await HeavyIo.Load(asbMessage.Message, asbMessage.Heavies,
                     asbMessage.MessageId, cancellationToken)
