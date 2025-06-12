@@ -2,10 +2,11 @@
 using System.Text.Json.Serialization;
 using ASureBus.Abstractions;
 using ASureBus.Utils;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ASureBus.Core.Sagas;
 
-internal class SagaConverter(Type sagaType, Type sagaDataType)
+internal class SagaConverter(Type sagaType, Type sagaDataType, IServiceProvider services)
     : JsonConverter<object>
 {
     public override bool CanConvert(Type typeToConvert)
@@ -29,7 +30,7 @@ internal class SagaConverter(Type sagaType, Type sagaDataType)
             ? retrievedCorrelationIdElement.GetGuid()
             : throw new JsonException("CorrelationId property not found");
 
-        var saga = Activator.CreateInstance(sagaType);
+        var saga = ActivatorUtilities.CreateInstance(services, sagaType);
         
         //TODO hardcoded string
         var sagaDataProperty = sagaType.GetProperty("SagaData");

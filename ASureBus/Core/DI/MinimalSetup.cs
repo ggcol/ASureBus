@@ -77,7 +77,9 @@ public static class MinimalSetup
                     .AddSingleton<IAzureServiceBusService, AzureServiceBusService>()
                     .AddSingleton<ISagaBehaviour, SagaBehaviour>()
                     .AddSingleton<IMessagingContext, MessagingContext>()
-                    .AddSingleton<IMessageEmitter, MessageEmitter>();
+                    .AddSingleton<IMessageEmitter, MessageEmitter>()
+                    .AddSingleton<ISagaIO, SagaIO>();
+                
 
                 if (!isSendOnly)
                 {

@@ -26,10 +26,7 @@ internal sealed class AsbWorker : IHostedService
     private readonly IAsbCache _cache;
     private readonly ISagaBehaviour _sagaBehaviour;
     private readonly ILogger<AsbWorker> _logger;
-
-    private readonly ISagaIO? _sagaIo = AsbConfiguration.OffloadSagas
-        ? new SagaIO()
-        : null;
+    private readonly ISagaIO _sagaIo;
 
     private readonly IDictionary<ListenerType, ServiceBusProcessor>
         _processors = new Dictionary<ListenerType, ServiceBusProcessor>();
@@ -41,8 +38,9 @@ internal sealed class AsbWorker : IHostedService
         IMessageEmitter messageEmitter,
         ITypesLoader typesLoader,
         IAsbCache cache,
-        ISagaBehaviour sagaBehaviour, 
-        ILogger<AsbWorker> logger)
+        ISagaBehaviour sagaBehaviour,
+        ILogger<AsbWorker> logger,
+        ISagaIO sagaIo)
     {
         _hostApplicationLifetime = hostApplicationLifetime;
         _serviceProvider = serviceProvider;
@@ -50,6 +48,7 @@ internal sealed class AsbWorker : IHostedService
         _cache = cache;
         _sagaBehaviour = sagaBehaviour;
         _logger = logger;
+        _sagaIo = sagaIo;
 
         foreach (var handler in typesLoader.Handlers)
         {
@@ -152,9 +151,10 @@ internal sealed class AsbWorker : IHostedService
         catch (ServiceBusException sbEx)
         {
             _logger.LogCritical(
-                sbEx, 
-                "Message {MessageId} is going to be lost",
-                args.Message.MessageId);
+                sbEx,
+                "Message {MessageId} of type {MessageType} is going to be lost",
+                args.Message.MessageId,
+                handlerType.MessageType.Type.Name);
         }
         catch (Exception ex)
             when (ex is SerializationException
@@ -211,10 +211,7 @@ internal sealed class AsbWorker : IHostedService
 
             if (!IsComplete(saga!))
             {
-                if (_sagaIo is not null)
-                {
-                    await _sagaIo.Unload(saga, correlationId, sagaType).ConfigureAwait(false);
-                }
+                await _sagaIo.Unload(saga, correlationId, sagaType).ConfigureAwait(false);
 
                 _cache.Upsert(correlationId, saga);
             }
@@ -225,9 +222,10 @@ internal sealed class AsbWorker : IHostedService
         catch (ServiceBusException sbEx)
         {
             _logger.LogCritical(
-                sbEx, 
-                "Message {MessageId} is going to be lost",
-                args.Message.MessageId);
+                sbEx,
+                "Message {MessageId} of type {MessageType} is going to be lost",
+                args.Message.MessageId,
+                listenerType.MessageType.Type.Name);
         }
         catch (Exception ex)
         {
@@ -268,16 +266,13 @@ internal sealed class AsbWorker : IHostedService
         {
             return saga;
         }
+        
+        saga = await _sagaIo.Load(correlationId, sagaType)
+            .ConfigureAwait(false);
 
-        if (_sagaIo is not null && !listenerType.IsInitMessageHandler)
+        if (saga is not null)
         {
-            saga = await _sagaIo.Load(correlationId, sagaType)
-                .ConfigureAwait(false);
-
-            if (saga is not null)
-            {
-                return _cache.Set(correlationId, saga);
-            }
+            return _cache.Set(correlationId, saga);
         }
 
         if (!listenerType.IsInitMessageHandler)

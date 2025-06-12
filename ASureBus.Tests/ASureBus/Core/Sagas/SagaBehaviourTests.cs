@@ -12,6 +12,8 @@ namespace ASureBus.Tests.ASureBus.Core.Sagas;
 public class SagaBehaviourTests
 {
     private Mock<IAsbCache> _mockCache;
+    // ReSharper disable once InconsistentNaming
+    private Mock<ISagaIO> _mockSagaIO;
     private SagaBehaviour _sagaBehaviour;
 
     [SetUp]
@@ -24,7 +26,8 @@ public class SagaBehaviourTests
         };
 
         _mockCache = new Mock<IAsbCache>();
-        _sagaBehaviour = new SagaBehaviour(_mockCache.Object);
+        _mockSagaIO = new Mock<ISagaIO>();
+        _sagaBehaviour = new SagaBehaviour(_mockCache.Object, _mockSagaIO.Object);
     }
 
     [TearDown]

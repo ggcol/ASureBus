@@ -5,7 +5,9 @@ using ASureBus.Core.TypesHandling.Entities;
 namespace ASureBus.Services.StorageAccount;
 
 internal sealed class SagaDataStoragePersistenceService(
-    IAzureDataStorageService storage) : ISagaPersistenceService
+    IAzureDataStorageService storage,
+    IServiceProvider services)
+    : ISagaPersistenceService
 {
     public async Task<object?> Get(SagaType sagaType, Guid correlationId,
         CancellationToken cancellationToken = default)
@@ -14,7 +16,7 @@ internal sealed class SagaDataStoragePersistenceService(
                 AsbConfiguration.DataStorageSagaPersistence?.Container!,
                 GetName(sagaType, correlationId),
                 sagaType.Type,
-                new SagaConverter(sagaType.Type, sagaType.SagaDataType),
+                new SagaConverter(sagaType.Type, sagaType.SagaDataType, services),
                 cancellationToken)
             .ConfigureAwait(false);
     }

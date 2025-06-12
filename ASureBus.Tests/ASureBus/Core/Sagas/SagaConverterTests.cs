@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using ASureBus.Abstractions;
 using ASureBus.Core.Sagas;
+using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.Sagas;
 
@@ -20,11 +21,13 @@ public class SagaConverterTests
 
     private SagaConverter _sagaConverter;
     private JsonSerializerOptions _options;
+    private Mock<IServiceProvider> _mockServiceProvider;
 
     [SetUp]
     public void SetUp()
     {
-        _sagaConverter = new SagaConverter(typeof(ASaga), typeof(ASagaData));
+        _mockServiceProvider = new Mock<IServiceProvider>();
+        _sagaConverter = new SagaConverter(typeof(ASaga), typeof(ASagaData), _mockServiceProvider.Object);
         _options = new JsonSerializerOptions
         {
             Converters = { _sagaConverter }

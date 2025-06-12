@@ -4,7 +4,7 @@ using ASureBus.Utils;
 
 namespace ASureBus.Services.SqlServer;
 
-internal class SagaSqlServerPersistenceService(ISqlServerService storage) 
+internal class SagaSqlServerPersistenceService(ISqlServerService storage, IServiceProvider services) 
     : ISagaPersistenceService
 {
     public async Task<object?> Get(SagaType sagaType, Guid correlationId,
@@ -14,7 +14,7 @@ internal class SagaSqlServerPersistenceService(ISqlServerService storage)
             .ConfigureAwait(false);
         
         return !string.IsNullOrWhiteSpace(result)
-            ? Serializer.Deserialize(result, sagaType.Type, new SagaConverter(sagaType.Type, sagaType.SagaDataType))
+            ? Serializer.Deserialize(result, sagaType.Type, new SagaConverter(sagaType.Type, sagaType.SagaDataType, services))
             : null;
     }
 

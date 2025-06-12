@@ -5,12 +5,11 @@ using ASureBus.Core.TypesHandling.Entities;
 
 namespace ASureBus.Core.Sagas;
 
-internal sealed class SagaBehaviour(IAsbCache cache)
+// ReSharper disable once InconsistentNaming
+internal sealed class SagaBehaviour(IAsbCache cache, ISagaIO sagaIO)
     : ISagaBehaviour
 {
-    private readonly ISagaIO? _sagaIo = AsbConfiguration.OffloadSagas
-        ? new SagaIO()
-        : null;
+    private readonly ISagaIO? _sagaIo = sagaIO;
 
     public void SetCorrelationId(SagaType sagaType, Guid correlationId, object sagaInstance)
     {

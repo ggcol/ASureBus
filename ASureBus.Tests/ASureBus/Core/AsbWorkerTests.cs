@@ -53,7 +53,8 @@ public class AsbWorkerTests
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
             Mock.Of<ISagaBehaviour>(),
-            Mock.Of<ILogger<AsbWorker>>());
+            Mock.Of<ILogger<AsbWorker>>(),
+            Mock.Of<ISagaIO>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -110,7 +111,8 @@ public class AsbWorkerTests
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
             Mock.Of<ISagaBehaviour>(),
-            Mock.Of<ILogger<AsbWorker>>());
+            Mock.Of<ILogger<AsbWorker>>(),
+            Mock.Of<ISagaIO>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -158,7 +160,8 @@ public class AsbWorkerTests
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
             Mock.Of<ISagaBehaviour>(),
-            Mock.Of<ILogger<AsbWorker>>());
+            Mock.Of<ILogger<AsbWorker>>(),
+            Mock.Of<ISagaIO>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -215,7 +218,8 @@ public class AsbWorkerTests
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
             Mock.Of<ISagaBehaviour>(),
-            Mock.Of<ILogger<AsbWorker>>());
+            Mock.Of<ILogger<AsbWorker>>(),
+            Mock.Of<ISagaIO>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);

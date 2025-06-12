@@ -10,13 +10,15 @@ namespace ASureBus.Tests.ASureBus.Services.SqlServer;
 public class SagaSqlServerPersistenceServiceTests
 {
     private Mock<ISqlServerService> _mockStorage;
+    private Mock<IServiceProvider> _mockServiceProvider;
     private SagaSqlServerPersistenceService _service;
 
     [SetUp]
     public void SetUp()
     {
         _mockStorage = new Mock<ISqlServerService>();
-        _service = new SagaSqlServerPersistenceService(_mockStorage.Object);
+        _mockServiceProvider = new Mock<IServiceProvider>();
+        _service = new SagaSqlServerPersistenceService(_mockStorage.Object, _mockServiceProvider.Object);
     }
 
     [Test]

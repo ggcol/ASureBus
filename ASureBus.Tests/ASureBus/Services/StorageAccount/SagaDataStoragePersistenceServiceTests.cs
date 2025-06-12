@@ -9,6 +9,7 @@ namespace ASureBus.Tests.ASureBus.Services.StorageAccount;
 public class SagaDataStoragePersistenceServiceTests
 {
     private Mock<IAzureDataStorageService> _mockStorage;
+    private Mock<IServiceProvider> _mockServiceProvider;
     private SagaDataStoragePersistenceService _service;
     private SagaType _sagaType;
     private Guid _correlationId;
@@ -17,7 +18,8 @@ public class SagaDataStoragePersistenceServiceTests
     public void SetUp()
     {
         _mockStorage = new Mock<IAzureDataStorageService>();
-        _service = new SagaDataStoragePersistenceService(_mockStorage.Object);
+        _mockServiceProvider = new Mock<IServiceProvider>();
+        _service = new SagaDataStoragePersistenceService(_mockStorage.Object, _mockServiceProvider.Object);
         _sagaType = new SagaType
         {
             Type = typeof(object),

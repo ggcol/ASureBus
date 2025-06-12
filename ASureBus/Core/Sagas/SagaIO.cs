@@ -3,22 +3,32 @@ using ASureBus.Services;
 using ASureBus.Services.SqlServer;
 using ASureBus.Services.SqlServer.DbConnection;
 using ASureBus.Services.StorageAccount;
-using Microsoft.Data.SqlClient;
 
 namespace ASureBus.Core.Sagas;
 
 // ReSharper disable once InconsistentNaming
 internal class SagaIO : ISagaIO
 {
-    private readonly ISagaPersistenceService _persistenceService = MakeStorageService();
+    private readonly ISagaPersistenceService? _persistenceService;
+    private readonly bool _isInUse = AsbConfiguration.OffloadSagas;
 
-    private static ISagaPersistenceService MakeStorageService()
+    public SagaIO(IServiceProvider services)
+    {
+        if (_isInUse)
+        {
+            _persistenceService = MakeStorageService(services);
+        }
+    }
+
+    private ISagaPersistenceService? MakeStorageService(IServiceProvider services)
     {
         if (AsbConfiguration.UseDataStorageSagaPersistence)
         {
             return new SagaDataStoragePersistenceService(
                 new AzureDataStorageService(
-                    AsbConfiguration.DataStorageSagaPersistence?.ConnectionString));
+                    AsbConfiguration.DataStorageSagaPersistence?.ConnectionString)
+                , services
+            );
         }
 
         if (AsbConfiguration.UseSqlServerSagaPersistence)
@@ -28,6 +38,7 @@ internal class SagaIO : ISagaIO
                     new SqlServerConnectionFactory(AsbConfiguration.SqlServerSagaPersistence!
                         .ConnectionString)
                 )
+                , services
             );
         }
 
@@ -37,21 +48,27 @@ internal class SagaIO : ISagaIO
     public async Task<object?> Load(Guid correlationId, SagaType sagaType,
         CancellationToken cancellationToken = default)
     {
-        return await _persistenceService.Get(sagaType, correlationId, cancellationToken)
+        if (!_isInUse) return null;
+
+        return await _persistenceService!.Get(sagaType, correlationId, cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Unload(object? implSaga, Guid correlationId,
         SagaType sagaType, CancellationToken cancellationToken = default)
     {
-        await _persistenceService.Save(implSaga, sagaType, correlationId, cancellationToken)
+        if (!_isInUse) return;
+
+        await _persistenceService!.Save(implSaga, sagaType, correlationId, cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Delete(Guid correlationId, SagaType sagaType,
         CancellationToken cancellationToken = default)
     {
-        await _persistenceService.Delete(sagaType, correlationId, cancellationToken)
+        if (!_isInUse) return;
+
+        await _persistenceService!.Delete(sagaType, correlationId, cancellationToken)
             .ConfigureAwait(false);
     }
 }
