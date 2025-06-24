@@ -52,7 +52,7 @@ internal sealed class SqlServerService(IDbConnectionFactory connectionFactory) :
         }
     }
 
-    public async Task<string> Get(string tableName, Guid correlationId,
+    public async Task<string?> Get(string tableName, Guid correlationId,
         CancellationToken cancellationToken = default)
     {
         if (!await SchemaExists(cancellationToken).ConfigureAwait(false))
@@ -78,10 +78,7 @@ internal sealed class SqlServerService(IDbConnectionFactory connectionFactory) :
         await using var reader =
             await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
 
-        if (!reader.HasRows)
-        {
-            throw new Exception("No saga data found.");
-        }
+        if (!reader.HasRows) return null;
 
         await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
         return reader.GetString(0);

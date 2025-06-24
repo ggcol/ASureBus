@@ -13,9 +13,9 @@ internal class SagaSqlServerPersistenceService(ISqlServerService storage, IServi
         var result = await storage.Get(sagaType.Type.Name, correlationId, cancellationToken)
             .ConfigureAwait(false);
         
-        return !string.IsNullOrWhiteSpace(result)
-            ? Serializer.Deserialize(result, sagaType.Type, new SagaConverter(sagaType.Type, sagaType.SagaDataType, services))
-            : null;
+        return string.IsNullOrWhiteSpace(result)
+            ? null
+            : Serializer.Deserialize(result, sagaType.Type, new SagaConverter(sagaType.Type, sagaType.SagaDataType, services));
     }
 
     public async Task Save<TItem>(TItem item, SagaType sagaType, Guid correlationId,
