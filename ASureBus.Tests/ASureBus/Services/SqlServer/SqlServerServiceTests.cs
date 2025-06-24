@@ -101,8 +101,10 @@ public class SqlServerServiceTests
         await _service.Save(serializedItem, tableName, correlationId);
         await _service.Delete(tableName, correlationId);
 
+        var result = await _service.Get(tableName, correlationId);
+        
         // Assert
-        Assert.ThrowsAsync<Exception>(async () => await _service.Get(tableName, correlationId));
+        Assert.That(result, Is.Null);
     }
 
     private static SagaType MakeTestSagaType()
