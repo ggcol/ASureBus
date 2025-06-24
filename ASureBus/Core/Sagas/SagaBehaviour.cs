@@ -6,11 +6,9 @@ using ASureBus.Core.TypesHandling.Entities;
 namespace ASureBus.Core.Sagas;
 
 // ReSharper disable once InconsistentNaming
-internal sealed class SagaBehaviour(IAsbCache cache, ISagaIO sagaIO)
+internal sealed class SagaBehaviour(IAsbCache cache, ISagaIO sagaIo)
     : ISagaBehaviour
 {
-    private readonly ISagaIO? _sagaIo = sagaIO;
-
     public void SetCorrelationId(SagaType sagaType, Guid correlationId, object sagaInstance)
     {
         sagaType.Type
@@ -43,13 +41,11 @@ internal sealed class SagaBehaviour(IAsbCache cache, ISagaIO sagaIO)
     private void OnSagaCompleted(object sender, SagaCompletedEventArgs e)
     {
         cache.Remove(e.CorrelationId);
-        if (_sagaIo is not null)
-        {
-            _sagaIo.Delete(e.CorrelationId, new SagaType
-                {
-                    Type = e.Type
-                })
-                .ConfigureAwait(false).GetAwaiter();
-        }
+
+        sagaIo.Delete(e.CorrelationId, new SagaType
+            {
+                Type = e.Type
+            })
+            .ConfigureAwait(false).GetAwaiter();
     }
 }
