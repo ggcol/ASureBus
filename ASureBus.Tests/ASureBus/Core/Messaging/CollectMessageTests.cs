@@ -50,7 +50,7 @@ public class CollectMessageTests
         var enqueuedMessage = (AsbMessage<IAmAMessage>)_collectMessage.Messages.Peek();
 
         // Assert
-        Assert.That(enqueuedMessage.ScheduledTime, Is.EqualTo(scheduledTime));
+        Assert.That(enqueuedMessage.Header.ScheduledTime, Is.EqualTo(scheduledTime));
     }
 
     private class TestCollectMessage : CollectMessage

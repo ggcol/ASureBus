@@ -15,17 +15,17 @@ internal sealed class MessageEmitter(IAzureServiceBusService serviceBusService)
         {
             var asbMessage = collector.Messages.First();
 
-            var destination = asbMessage.IsCommand
+            var destination = asbMessage.Header.IsCommand
                 ? await serviceBusService
-                    .ConfigureQueue(asbMessage.Destination, cancellationToken)
+                    .ConfigureQueue(asbMessage.Header.Destination, cancellationToken)
                     .ConfigureAwait(false)
                 : await serviceBusService
-                    .ConfigureTopicForSender(asbMessage.Destination, cancellationToken)
+                    .ConfigureTopicForSender(asbMessage.Header.Destination, cancellationToken)
                     .ConfigureAwait(false);
 
-            if (asbMessage.IsScheduled)
+            if (asbMessage.Header.IsScheduled)
             {
-                await EmitScheduled(asbMessage, destination, asbMessage.ScheduledTime!.Value,
+                await EmitScheduled(asbMessage, destination, asbMessage.Header.ScheduledTime!.Value,
                         cancellationToken)
                     .ConfigureAwait(false);
             }

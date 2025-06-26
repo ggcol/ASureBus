@@ -11,23 +11,27 @@ internal abstract class BrokerBehavior<TMessage>(
     where TMessage : IAmAMessage
 {
     protected readonly IMessagingContext Context = context;
-    
+
     public ICollectMessage Collector => (ICollectMessage)Context;
 
     protected async Task<AsbMessage<TMessage>?> GetFrom(BinaryData binaryData,
         CancellationToken cancellationToken = default)
     {
         var asbMessage = await Serializer
-            .Deserialize<AsbMessage<TMessage>?>(binaryData.ToStream(),
+            .Deserialize<AsbMessage<TMessage>?>(
+                binaryData.ToStream(),
                 cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
         if (!HeavyIo.IsHeavyConfigured()) return asbMessage;
-        
-        if (asbMessage.Heavies is not null && asbMessage.Heavies.Any())
+
+        if (asbMessage?.Header.Heavies is not null && asbMessage.Header.Heavies.Any())
         {
-            await HeavyIo.Load(asbMessage.Message, asbMessage.Heavies,
-                    asbMessage.MessageId, cancellationToken)
+            await HeavyIo.Load(
+                    asbMessage.Message,
+                    asbMessage.Header.Heavies,
+                    asbMessage.Header.MessageId,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
 

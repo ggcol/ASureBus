@@ -38,12 +38,16 @@ public class HandlerBrokerTests
 
         var asbMessage = new AsbMessage<HandlerBrokerTestsMessage>
         {
+            Header = new AsbMessageHeader()
+            {
+                Heavies = new List<HeavyReference>(),
+                MessageId = Guid.NewGuid(),
+                CorrelationId = Guid.NewGuid(),
+                MessageName = nameof(HandlerBrokerTestsMessage),
+                Destination = nameof(HandlerBrokerTestsMessage),
+                IsCommand = testMessage is IAmACommand
+            },
             Message = testMessage,
-            Heavies = new List<HeavyReference>(),
-            MessageId = Guid.NewGuid(),
-            CorrelationId = Guid.NewGuid(),
-            MessageName = nameof(HandlerBrokerTestsMessage),
-            Destination = nameof(HandlerBrokerTestsMessage)
         };
 
         var json = Serializer.Serialize(asbMessage);
@@ -70,7 +74,7 @@ public class HandlerBrokerTests
     }
 }
 
-internal class HandlerBrokerTestsMessage : IAmAMessage
+internal class HandlerBrokerTestsMessage : IAmACommand
 {
     public string? AProperty { get; set; }
 }

@@ -32,12 +32,16 @@ public class SagaBrokerTests
         
         var asbMessage = new AsbMessage<SagaBrokerTestMessage>
         {
-            Message = testMessage,
-            Heavies = new List<HeavyReference>(),
-            MessageId = Guid.NewGuid(),
-            CorrelationId = Guid.NewGuid(),
-            MessageName = nameof(SagaBrokerTestMessage),
-            Destination = nameof(SagaBrokerTestMessage)
+            Header = new AsbMessageHeader()
+            {
+                Heavies = new List<HeavyReference>(),
+                MessageId = Guid.NewGuid(),
+                CorrelationId = Guid.NewGuid(),
+                MessageName = nameof(SagaBrokerTestMessage),
+                Destination = nameof(SagaBrokerTestMessage),
+                IsCommand = testMessage is IAmACommand
+            },
+            Message = testMessage
         };
         
         var json = Serializer.Serialize(asbMessage);
@@ -83,7 +87,7 @@ public class SagaBrokerTests
         }
     }
     
-    private class SagaBrokerTestMessage : IAmAMessage { }
+    private class SagaBrokerTestMessage : IAmACommand { }
 
     private class FakeSagaData : SagaData { }
 }
