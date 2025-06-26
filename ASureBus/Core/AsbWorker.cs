@@ -127,6 +127,7 @@ internal sealed class AsbWorker : IHostedService
         ProcessMessageEventArgs args)
     {
         var correlationId = await GetCorrelationId(args);
+        var correlationId = messageHeader.CorrelationId;
 
         try
         {
@@ -188,7 +189,8 @@ internal sealed class AsbWorker : IHostedService
     private async Task ProcessMessage(SagaType sagaType,
         SagaHandlerType listenerType, ProcessMessageEventArgs args)
     {
-        var correlationId = await GetCorrelationId(args);
+        var messageHeader = await GetMessageHeader(args).ConfigureAwait(false);
+        var correlationId = messageHeader.CorrelationId;
 
         try
         {
@@ -249,14 +251,14 @@ internal sealed class AsbWorker : IHostedService
         return ((ISaga)implSaga).IsComplete;
     }
 
-    private static async Task<Guid> GetCorrelationId(ProcessMessageEventArgs args)
+    private static async Task<AsbMessageHeader?> GetMessageHeader(ProcessMessageEventArgs args)
     {
-        var dto = await Serializer.Deserialize<DeserializeCorrelationId>(
+        var header = await Serializer.Deserialize<AsbMessageHeader>(
                 args.Message.Body.ToStream(),
                 cancellationToken: args.CancellationToken)
             .ConfigureAwait(false);
 
-        return dto.CorrelationId;
+        return header;
     }
 
     private async Task<object?> GetConcreteSaga(SagaType sagaType, SagaHandlerType listenerType,
@@ -266,7 +268,7 @@ internal sealed class AsbWorker : IHostedService
         {
             return saga;
         }
-        
+
         saga = await _sagaIo.Load(correlationId, sagaType)
             .ConfigureAwait(false);
 
@@ -299,16 +301,16 @@ internal sealed class AsbWorker : IHostedService
     private static bool UsesHeavies(IAsbMessage asbMessage)
     {
         return HeavyIo.IsHeavyConfigured()
-               && asbMessage.Heavies is not null
-               && asbMessage.Heavies.Any();
+               && asbMessage.Header.Heavies is not null
+               && asbMessage.Header.Heavies.Any();
     }
 
     private static async Task DeleteHeavies(IAsbMessage asbMessage,
         CancellationToken cancellationToken)
     {
-        foreach (var heavyRef in asbMessage.Heavies!)
+        foreach (var heavyRef in asbMessage.Header.Heavies!)
         {
-            await HeavyIo.Delete(asbMessage.MessageId, heavyRef, cancellationToken)
+            await HeavyIo.Delete(asbMessage.Header.MessageId, heavyRef, cancellationToken)
                 .ConfigureAwait(false);
         }
     }
