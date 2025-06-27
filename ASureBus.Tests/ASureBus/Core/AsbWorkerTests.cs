@@ -75,6 +75,7 @@ public class AsbWorkerTests
         var sagaHandlerType = new SagaHandlerType()
         {
             IsInitMessageHandler = true,
+            IsTimeoutHandler = false,
             MessageType = new MessageType()
             {
                 IsCommand = true,
@@ -182,6 +183,7 @@ public class AsbWorkerTests
         var sagaHandlerType = new SagaHandlerType()
         {
             IsInitMessageHandler = true,
+            IsTimeoutHandler = false,
             MessageType = new MessageType()
             {
                 IsCommand = true,

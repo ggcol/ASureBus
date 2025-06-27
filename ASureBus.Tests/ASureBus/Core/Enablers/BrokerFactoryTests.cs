@@ -66,7 +66,8 @@ public class BrokerFactoryTests
                 Type = typeof(FakeMessage),
                 IsCommand = true
             },
-            IsInitMessageHandler = true
+            IsInitMessageHandler = true,
+            IsTimeoutHandler = false
         };
 
         var sagaType = new SagaType

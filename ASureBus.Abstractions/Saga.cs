@@ -14,8 +14,7 @@ public abstract class Saga<T> : ISaga
     public Guid CorrelationId { get; set; } = Guid.Empty;
     public event EventHandler<SagaCompletedEventArgs>? Completed;
     public bool IsComplete { get; private set; }
-    
-    // ReSharper disable once InconsistentNaming
+
     protected void IAmComplete()
     {
         IsComplete = true;
@@ -25,6 +24,41 @@ public abstract class Saga<T> : ISaga
             Type = GetType()
         });
     }
+
+    protected Task IAmComplete(CancellationToken cancellationToken)
+    {
+        IsComplete = true;
+        Completed?.Invoke(this, new SagaCompletedEventArgs
+        {
+            CorrelationId = CorrelationId,
+            Type = GetType()
+        });
+        return Task.CompletedTask;
+    }
+
+    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, TTimeout timeout, TimeSpan delay,
+        CancellationToken cancellationToken = default)
+        where TTimeout : IAmATimeout
+    {
+        await context.SendAfter(timeout, delay, cancellationToken).ConfigureAwait(false);
+    }
+
+    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, TimeSpan delay,
+        CancellationToken cancellationToken = default)
+        where TTimeout : IAmATimeout, new()
+        => await RequestTimeout(context, new TTimeout(), delay, cancellationToken);
+
+    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, TTimeout timeout,
+        DateTimeOffset scheduledTime, CancellationToken cancellationToken = default)
+        where TTimeout : IAmATimeout
+    {
+        await context.SendScheduled(timeout, scheduledTime, cancellationToken).ConfigureAwait(false);
+    }
+    
+    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, DateTimeOffset scheduledTime,
+        CancellationToken cancellationToken = default)
+        where TTimeout : IAmATimeout, new()
+        => await RequestTimeout(context, new TTimeout(), scheduledTime, cancellationToken);
 }
 
 public sealed class SagaCompletedEventArgs : EventArgs

@@ -92,6 +92,8 @@ internal sealed class TypesLoader : ITypesLoader
                         i.GetGenericTypeDefinition() == typeof(IHandleMessage<>)
                         ||
                         i.GetGenericTypeDefinition() == typeof(IAmStartedBy<>)
+                        ||
+                        i.GetGenericTypeDefinition() == typeof(IHandleTimeout<>)
                     )
                 )
                 .GroupBy(i => i.GetGenericArguments().First())
@@ -108,7 +110,8 @@ internal sealed class TypesLoader : ITypesLoader
                         IsCommand = messageType.GetInterfaces()
                             .Any(x => x == typeof(IAmACommand))
                     },
-                    IsInitMessageHandler = i.GetGenericTypeDefinition() == typeof(IAmStartedBy<>)
+                    IsInitMessageHandler = i.GetGenericTypeDefinition() == typeof(IAmStartedBy<>),
+                    IsTimeoutHandler = i.GetGenericTypeDefinition() == typeof(IHandleTimeout<>),
                 });
             }
 

@@ -2,5 +2,6 @@
 
 internal sealed class SagaHandlerType : ListenerType
 {
-    internal bool IsInitMessageHandler { get; init; }
+    internal required bool IsInitMessageHandler { get; init; }
+    internal required bool IsTimeoutHandler { get; init; }
 }

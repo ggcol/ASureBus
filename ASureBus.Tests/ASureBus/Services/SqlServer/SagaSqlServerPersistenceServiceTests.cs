@@ -119,6 +119,7 @@ public class SagaSqlServerPersistenceServiceTests
                 new SagaHandlerType()
                 {
                     IsInitMessageHandler = true,
+                    IsTimeoutHandler = false,
                     MessageType = new MessageType()
                     {
                         IsCommand = true,

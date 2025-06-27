@@ -118,6 +118,7 @@ public class SqlServerServiceTests
                 new SagaHandlerType()
                 {
                     IsInitMessageHandler = true,
+                    IsTimeoutHandler = false,
                     MessageType = new MessageType()
                     {
                         IsCommand = true,

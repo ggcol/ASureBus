@@ -4,6 +4,7 @@ using ASureBus.Accessories.Heavy;
 using ASureBus.Core.Caching;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.Entities;
+using ASureBus.Core.Entities.NotNullPatternReturns;
 using ASureBus.Core.Exceptions;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
@@ -126,7 +127,7 @@ internal sealed class AsbWorker : IHostedService
     private async Task ProcessMessage(HandlerType handlerType,
         ProcessMessageEventArgs args)
     {
-        var correlationId = await GetCorrelationId(args);
+        var messageHeader = await GetMessageHeader(args).ConfigureAwait(false);
         var correlationId = messageHeader.CorrelationId;
 
         try
@@ -176,10 +177,19 @@ internal sealed class AsbWorker : IHostedService
         var ex = args.Exception as AsbException;
         var correlationId = ex!.CorrelationId;
 
-        var implSaga = await GetConcreteSaga(sagaType, listenerType, correlationId)
+        var saga = await GetConcreteSaga(sagaType, listenerType, correlationId)
             .ConfigureAwait(false);
 
-        var broker = BrokerFactory.Get(_serviceProvider, sagaType, implSaga, listenerType,
+        if (saga is SagaAlreadyCompleted)
+        {
+            _logger.LogInformation(
+                "Handling timeout for saga {SagaType} with correlation id {CorrelationId}, saga already completed, skipping",
+                sagaType.Type.Name, correlationId);
+            
+            return;
+        }
+
+        var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType,
             correlationId);
 
         await broker.HandleError(ex?.OriginalException!, args.CancellationToken)
@@ -196,6 +206,18 @@ internal sealed class AsbWorker : IHostedService
         {
             var saga = await GetConcreteSaga(sagaType, listenerType, correlationId)
                 .ConfigureAwait(false);
+
+            if (saga is SagaAlreadyCompleted)
+            {
+                _logger.LogInformation(
+                    "Handling timeout for saga {SagaType} with correlation id {CorrelationId}, saga already completed, skipping",
+                    sagaType.Type.Name, correlationId);
+
+                await args.CompleteMessageAsync(args.Message, args.CancellationToken)
+                    .ConfigureAwait(false);
+                
+                return;
+            }
 
             var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType,
                 (saga as ISaga)!.CorrelationId);
@@ -253,12 +275,12 @@ internal sealed class AsbWorker : IHostedService
 
     private static async Task<AsbMessageHeader?> GetMessageHeader(ProcessMessageEventArgs args)
     {
-        var header = await Serializer.Deserialize<AsbMessageHeader>(
+        var des = await Serializer.Deserialize<DeserializeAsbMessageHeader>(
                 args.Message.Body.ToStream(),
                 cancellationToken: args.CancellationToken)
             .ConfigureAwait(false);
 
-        return header;
+        return des.Header;
     }
 
     private async Task<object?> GetConcreteSaga(SagaType sagaType, SagaHandlerType listenerType,
@@ -275,6 +297,12 @@ internal sealed class AsbWorker : IHostedService
         if (saga is not null)
         {
             return _cache.Set(correlationId, saga);
+        }
+
+        // if is timeout ok, maybe the saga already completed
+        if (listenerType.IsTimeoutHandler)
+        {
+            return new SagaAlreadyCompleted(sagaType, correlationId);
         }
 
         if (!listenerType.IsInitMessageHandler)

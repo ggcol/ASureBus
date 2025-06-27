@@ -13,6 +13,8 @@ using Playground.Samples._05_Heavy;
 using Playground.Samples._07_DelayedAndScheduled;
 using Playground.Samples._08_ABrokenSaga;
 using Playground.Samples._09_LongerSaga;
+using Playground.Samples._10_SagaWithTimeout;
+using Playground.Samples._11_SagaTimeoutTriggeredAfterCompleting;
 
 await Host
     .CreateDefaultBuilder()
@@ -96,6 +98,8 @@ await Host
             // services.AddHostedService<DelayedAndScheduledInitJob>();
             // services.AddHostedService<ABrokenSagaInitJob>();
             // services.AddHostedService<LongerSagaInitJob>();
+            // services.AddHostedService<SagaWithTimeoutInitJob>();
+            // services.AddHostedService<SagaTimeoutTriggeredAfterCompletingInitJob>();
             services.AddLogging();
         })
     
