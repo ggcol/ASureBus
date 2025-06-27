@@ -34,7 +34,7 @@ public class SagaWithTimeout(ILogger<SagaWithTimeout> logger)
     {
         await context.Send(new SagaWithTimeoutAMessage(), cancellationToken).ConfigureAwait(false);
 
-        await RequestTimeout(context, new SagaWithTimeoutTimeout(), TimeSpan.FromSeconds(5), cancellationToken);
+        await RequestTimeout(new SagaWithTimeoutTimeout(), TimeSpan.FromSeconds(5), context, cancellationToken);
     }
 
     public async Task Handle(SagaWithTimeoutAMessage message, IMessagingContext context, CancellationToken cancellationToken)

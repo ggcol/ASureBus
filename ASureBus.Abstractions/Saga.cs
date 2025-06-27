@@ -36,29 +36,29 @@ public abstract class Saga<T> : ISaga
         return Task.CompletedTask;
     }
 
-    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, TTimeout timeout, TimeSpan delay,
+    protected async Task RequestTimeout<TTimeout>(TTimeout timeout, TimeSpan delay, IMessagingContext context,
         CancellationToken cancellationToken = default)
         where TTimeout : IAmATimeout
     {
         await context.SendAfter(timeout, delay, cancellationToken).ConfigureAwait(false);
     }
 
-    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, TimeSpan delay,
+    protected async Task RequestTimeout<TTimeout>(TimeSpan delay, IMessagingContext context,
         CancellationToken cancellationToken = default)
         where TTimeout : IAmATimeout, new()
-        => await RequestTimeout(context, new TTimeout(), delay, cancellationToken);
+        => await RequestTimeout(new TTimeout(), delay, context, cancellationToken);
 
-    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, TTimeout timeout,
-        DateTimeOffset scheduledTime, CancellationToken cancellationToken = default)
+    protected async Task RequestTimeout<TTimeout>(TTimeout timeout, DateTimeOffset scheduledTime,
+        IMessagingContext context, CancellationToken cancellationToken = default)
         where TTimeout : IAmATimeout
     {
         await context.SendScheduled(timeout, scheduledTime, cancellationToken).ConfigureAwait(false);
     }
-    
-    protected async Task RequestTimeout<TTimeout>(IMessagingContext context, DateTimeOffset scheduledTime,
+
+    protected async Task RequestTimeout<TTimeout>(DateTimeOffset scheduledTime, IMessagingContext context,
         CancellationToken cancellationToken = default)
         where TTimeout : IAmATimeout, new()
-        => await RequestTimeout(context, new TTimeout(), scheduledTime, cancellationToken);
+        => await RequestTimeout(new TTimeout(), scheduledTime, context, cancellationToken);
 }
 
 public sealed class SagaCompletedEventArgs : EventArgs

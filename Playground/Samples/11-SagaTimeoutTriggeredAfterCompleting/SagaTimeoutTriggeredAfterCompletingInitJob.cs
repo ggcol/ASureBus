@@ -11,7 +11,8 @@ public class SagaTimeoutTriggeredAfterCompletingInitJob(
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await context.Send(new SagaTimeoutTriggeredAfterCompletingInitMessage(), cancellationToken).ConfigureAwait(false);
+        await context.Send(new SagaTimeoutTriggeredAfterCompletingInitMessage(), cancellationToken)
+            .ConfigureAwait(false);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
@@ -36,7 +37,8 @@ public class SagaTimeoutTriggeredAfterCompleting(ILogger<SagaTimeoutTriggeredAft
     {
         await context.Send(new SagaTimeoutTriggeredAfterCompletingAMessage(), cancellationToken).ConfigureAwait(false);
 
-        await RequestTimeout(context, new SagaTimeoutTriggeredAfterCompletingTimeout(), TimeSpan.FromSeconds(5), cancellationToken);
+        await RequestTimeout(new SagaTimeoutTriggeredAfterCompletingTimeout(), TimeSpan.FromSeconds(5), context,
+            cancellationToken);
     }
 
     public async Task Handle(SagaTimeoutTriggeredAfterCompletingAMessage message, IMessagingContext context,
