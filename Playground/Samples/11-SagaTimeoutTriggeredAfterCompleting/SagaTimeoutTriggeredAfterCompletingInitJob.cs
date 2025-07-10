@@ -41,17 +41,19 @@ public class SagaTimeoutTriggeredAfterCompleting(ILogger<SagaTimeoutTriggeredAft
             cancellationToken);
     }
 
-    public async Task Handle(SagaTimeoutTriggeredAfterCompletingAMessage message, IMessagingContext context,
+    public Task Handle(SagaTimeoutTriggeredAfterCompletingAMessage message, IMessagingContext context,
         CancellationToken cancellationToken)
     {
         logger.LogInformation("Completing saga after receiving message... {Time}", DateTime.UtcNow);
 
-        await IAmComplete(cancellationToken).ConfigureAwait(false);
+        IAmComplete();
+        return Task.CompletedTask;
     }
 
-    public async Task Handle(SagaTimeoutTriggeredAfterCompletingTimeout message, IMessagingContext context,
+    public Task Handle(SagaTimeoutTriggeredAfterCompletingTimeout message, IMessagingContext context,
         CancellationToken cancellationToken)
     {
+        return Task.CompletedTask;
         //check console, you should see the timeout being skipped since saga is already completed
     }
 }

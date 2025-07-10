@@ -37,7 +37,7 @@ public class SagaWithTimeout(ILogger<SagaWithTimeout> logger)
         await RequestTimeout(new SagaWithTimeoutTimeout(), TimeSpan.FromSeconds(5), context, cancellationToken);
     }
 
-    public async Task Handle(SagaWithTimeoutAMessage message, IMessagingContext context, CancellationToken cancellationToken)
+    public Task Handle(SagaWithTimeoutAMessage message, IMessagingContext context, CancellationToken cancellationToken)
     {
         while (!SagaData.TimeoutTriggered)
         {
@@ -46,14 +46,16 @@ public class SagaWithTimeout(ILogger<SagaWithTimeout> logger)
         }
         
         logger.LogInformation("Timeout triggered, completing saga... {Time}", DateTime.UtcNow);
-        
-        await IAmComplete(cancellationToken).ConfigureAwait(false);
+
+        IAmComplete();
+        return Task.CompletedTask;
     }
 
-    public async Task Handle(SagaWithTimeoutTimeout message, IMessagingContext context,
+    public Task Handle(SagaWithTimeoutTimeout message, IMessagingContext context,
         CancellationToken cancellationToken)
     {
         SagaData.TimeoutTriggered = true;
+        return Task.CompletedTask;
     }
 }
 
