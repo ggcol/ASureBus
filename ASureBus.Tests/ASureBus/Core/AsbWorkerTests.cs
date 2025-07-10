@@ -1,14 +1,11 @@
 ﻿using Moq;
 using ASureBus.Core;
-using ASureBus.Core.Caching;
-using ASureBus.Core.Messaging;
-using ASureBus.Core.Sagas;
+using ASureBus.Core.MessageProcessing;
 using ASureBus.Core.TypesHandling;
 using ASureBus.Core.TypesHandling.Entities;
 using ASureBus.Services.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace ASureBus.Tests.ASureBus.Core;
 
@@ -47,14 +44,10 @@ public class AsbWorkerTests
 
         var worker = new AsbWorker(
             Mock.Of<IHostApplicationLifetime>(),
-            Mock.Of<IServiceProvider>(),
             mockAzureServiceBusService.Object,
-            Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
-            Mock.Of<IAsbCache>(),
-            Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>(),
-            Mock.Of<ISagaFactory>());
+            Mock.Of<IProcessSagaMessages>(),
+            Mock.Of<IProcessHandlerMessages>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -106,14 +99,10 @@ public class AsbWorkerTests
 
         var worker = new AsbWorker(
             Mock.Of<IHostApplicationLifetime>(),
-            Mock.Of<IServiceProvider>(),
             mockAzureServiceBusService.Object,
-            Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
-            Mock.Of<IAsbCache>(),
-            Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>(),
-            Mock.Of<ISagaFactory>());
+            Mock.Of<IProcessSagaMessages>(),
+            Mock.Of<IProcessHandlerMessages>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -155,14 +144,10 @@ public class AsbWorkerTests
 
         var worker = new AsbWorker(
             Mock.Of<IHostApplicationLifetime>(),
-            Mock.Of<IServiceProvider>(),
             mockAzureServiceBusService.Object,
-            Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
-            Mock.Of<IAsbCache>(),
-            Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>(),
-            Mock.Of<ISagaFactory>());
+            Mock.Of<IProcessSagaMessages>(),
+            Mock.Of<IProcessHandlerMessages>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -214,14 +199,10 @@ public class AsbWorkerTests
 
         var worker = new AsbWorker(
             Mock.Of<IHostApplicationLifetime>(),
-            Mock.Of<IServiceProvider>(),
             mockAzureServiceBusService.Object,
-            Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
-            Mock.Of<IAsbCache>(),
-            Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>(),
-            Mock.Of<ISagaFactory>());
+            Mock.Of<IProcessSagaMessages>(),
+            Mock.Of<IProcessHandlerMessages>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
