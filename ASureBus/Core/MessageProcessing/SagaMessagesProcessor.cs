@@ -76,18 +76,42 @@ internal sealed class SagaMessagesProcessor(
         }
         catch (Exception ex)
         {
-            /*
-             * exception caught here is always TargetInvocationException
-             * since every saga's handle method is called by reflection
-             * the actual exception should be stored in InnerException
-             */
+            //TODO implement FailFast mechanism
 
-            if (ex.InnerException is AsbException) throw;
-            throw new AsbException
+            var actualRetries = args.Message.DeliveryCount;
+            var maxRetries = AsbConfiguration.ServiceBus.ClientOptions.RetryOptions.MaxRetries;
+
+            /*
+             * this moves the exception to ProcessError below
+             * while propagation both the original exception
+             * and the correlation id
+             */
+            if (actualRetries < maxRetries) throw new AsbException()
             {
-                OriginalException = ex.InnerException ?? ex,
+                OriginalException = ex,
                 CorrelationId = correlationId
             };
+
+            logger.LogError(
+                ex,
+                "Message {MessageId} of type {MessageType} with CorrelationId: {CorrelationId} has reached max retries ({MaxRetries}) and will be dead-lettered",
+                args.Message.MessageId,
+                correlationId,
+                listenerType.MessageType.Type.Name,
+                maxRetries);
+
+            var reasonDescription = string.Join('\n',
+                $"Message: {ex.Message}",
+                $"Stack Trace: {ex.StackTrace}",
+                $"CorrelationId: {correlationId}"
+            );
+
+            await args.DeadLetterMessageAsync(
+                    args.Message,
+                    ex.GetType().Name,
+                    reasonDescription,
+                    args.CancellationToken)
+                .ConfigureAwait(false);
         }
     }
 

@@ -60,6 +60,36 @@ internal sealed class HandlerMessagesProcessor(
                     args.CancellationToken)
                 .ConfigureAwait(false);
         }
+        catch (Exception ex)
+        {
+            //TODO implement FailFast mechanism
+
+            var actualRetries = args.Message.DeliveryCount;
+            var maxRetries = AsbConfiguration.ServiceBus.ClientOptions.RetryOptions.MaxRetries;
+            
+            if (actualRetries < maxRetries) throw;
+            
+            logger.LogError(
+                ex,
+                "Message {MessageId} with CorrelationId: {CorrealationId} of type {MessageType} has reached max retries ({MaxRetries}) and will be dead-lettered",
+                args.Message.MessageId,
+                correlationId,
+                handlerType.MessageType.Type.Name,
+                maxRetries);
+            
+            var reasonDescription = string.Join('\n',
+                $"Message: {ex.Message}",
+                $"Stack Trace: {ex.StackTrace}",
+                $"CorrelationId: {correlationId}"
+            );
+
+            await args.DeadLetterMessageAsync(
+                    args.Message,
+                    ex.GetType().Name,
+                    ex.Message,
+                    args.CancellationToken)
+                .ConfigureAwait(false);
+        }
     }
 
     public async Task ProcessError(HandlerType handlerType,

@@ -1,5 +1,6 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Core.Entities;
+using ASureBus.Core.Exceptions;
 
 namespace ASureBus.Core.Enablers;
 
@@ -36,6 +37,13 @@ internal sealed class SagaBroker<TSagaData, TMessage>(
                 asbMessage.Message, Context, cancellationToken
             ]);
         }
+        else
+        {
+            throw new FailFastException(
+                $"Saga {saga.GetType().Name} does not implement a method named {nameof(Handle)} " +
+                $"with a parameter of type {typeof(TMessage).Name}."
+            );
+        }
 
         return asbMessage;
     }
@@ -62,6 +70,13 @@ internal sealed class SagaBroker<TSagaData, TMessage>(
             [
                 ex, Context, cancellationToken
             ]);
+        }
+        else
+        {
+            throw new FailFastException(
+                $"Saga {saga.GetType().Name} does not implement a method named {nameof(HandleError)} " +
+                $"with a parameter of type {typeof(Exception).Name}."
+            );
         }
     }
 }
