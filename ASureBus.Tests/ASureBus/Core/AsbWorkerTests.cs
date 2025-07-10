@@ -52,9 +52,9 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>(),
             Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>());
+            Mock.Of<ISagaIO>(),
+            Mock.Of<ISagaFactory>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -111,9 +111,9 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>(),
             Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>());
+            Mock.Of<ISagaIO>(),
+            Mock.Of<ISagaFactory>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -160,9 +160,9 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>(),
             Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>());
+            Mock.Of<ISagaIO>(),
+            Mock.Of<ISagaFactory>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -219,9 +219,9 @@ public class AsbWorkerTests
             Mock.Of<IMessageEmitter>(),
             mockTypesLoader.Object,
             Mock.Of<IAsbCache>(),
-            Mock.Of<ISagaBehaviour>(),
             Mock.Of<ILogger<AsbWorker>>(),
-            Mock.Of<ISagaIO>());
+            Mock.Of<ISagaIO>(),
+            Mock.Of<ISagaFactory>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);

@@ -75,7 +75,7 @@ public static class MinimalSetup
                     .AddSingleton<IAsbCache, AsbCache>()
                     .AddSingleton<ITypesLoader, TypesLoader>()
                     .AddSingleton<IAzureServiceBusService, AzureServiceBusService>()
-                    .AddSingleton<ISagaBehaviour, SagaBehaviour>()
+                    .AddSingleton<ISagaFactory, SagaFactory>()
                     .AddSingleton<IMessagingContext, MessagingContext>()
                     .AddSingleton<IMessageEmitter, MessageEmitter>()
                     .AddSingleton<ISagaIO, SagaIO>();

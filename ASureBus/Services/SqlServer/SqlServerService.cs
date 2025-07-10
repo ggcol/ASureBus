@@ -57,12 +57,13 @@ internal sealed class SqlServerService(IDbConnectionFactory connectionFactory) :
     {
         if (!await SchemaExists(cancellationToken).ConfigureAwait(false))
         {
-            throw new Exception("Schema does not exist.");
+            await CreateSchema(cancellationToken).ConfigureAwait(false);
+            return null;
         }
 
         if (!await TableExists(tableName, cancellationToken).ConfigureAwait(false))
         {
-            throw new Exception("Table does not exist.");
+            return null;
         }
 
         var query =

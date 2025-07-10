@@ -25,17 +25,6 @@ public abstract class Saga<T> : ISaga
         });
     }
 
-    protected Task IAmComplete(CancellationToken cancellationToken)
-    {
-        IsComplete = true;
-        Completed?.Invoke(this, new SagaCompletedEventArgs
-        {
-            CorrelationId = CorrelationId,
-            Type = GetType()
-        });
-        return Task.CompletedTask;
-    }
-
     protected async Task RequestTimeout<TTimeout>(TTimeout timeout, TimeSpan delay, IMessagingContext context,
         CancellationToken cancellationToken = default)
         where TTimeout : IAmATimeout

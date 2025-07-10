@@ -84,8 +84,7 @@ public class BrokerFactoryTests
             .Returns(implSaga);
 
         // Act
-        var broker = BrokerFactory.Get(_serviceProviderMock.Object, sagaType, implSaga,
-            listenerType, correlationId);
+        var broker = BrokerFactory.Get(_serviceProviderMock.Object, sagaType, implSaga, listenerType);
 
         // Assert
         Assert.That(broker, Is.Not.Null);

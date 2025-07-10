@@ -69,7 +69,7 @@ public class MinimalSetupTests
             s => s.Add(It.Is<ServiceDescriptor>(d =>
                 d.ServiceType == typeof(IAzureServiceBusService))), Times.Once);
         _mockServiceCollection.Verify(
-            s => s.Add(It.Is<ServiceDescriptor>(d => d.ServiceType == typeof(ISagaBehaviour))),
+            s => s.Add(It.Is<ServiceDescriptor>(d => d.ServiceType == typeof(ISagaFactory))),
             Times.Once);
         _mockServiceCollection.Verify(
             s => s.Add(It.Is<ServiceDescriptor>(d => d.ServiceType == typeof(IMessagingContext))),
@@ -114,7 +114,7 @@ public class MinimalSetupTests
             s => s.Add(It.Is<ServiceDescriptor>(d =>
                 d.ServiceType == typeof(IAzureServiceBusService))), Times.Once);
         _mockServiceCollection.Verify(
-            s => s.Add(It.Is<ServiceDescriptor>(d => d.ServiceType == typeof(ISagaBehaviour))),
+            s => s.Add(It.Is<ServiceDescriptor>(d => d.ServiceType == typeof(ISagaFactory))),
             Times.Once);
         _mockServiceCollection.Verify(
             s => s.Add(It.Is<ServiceDescriptor>(d => d.ServiceType == typeof(IMessagingContext))),

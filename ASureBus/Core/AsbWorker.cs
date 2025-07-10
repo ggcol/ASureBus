@@ -25,9 +25,9 @@ internal sealed class AsbWorker : IHostedService
     private readonly IServiceProvider _serviceProvider;
     private readonly IMessageEmitter _messageEmitter;
     private readonly IAsbCache _cache;
-    private readonly ISagaBehaviour _sagaBehaviour;
     private readonly ILogger<AsbWorker> _logger;
     private readonly ISagaIO _sagaIo;
+    private readonly ISagaFactory _sagaFactory;
 
     private readonly IDictionary<ListenerType, ServiceBusProcessor>
         _processors = new Dictionary<ListenerType, ServiceBusProcessor>();
@@ -39,17 +39,17 @@ internal sealed class AsbWorker : IHostedService
         IMessageEmitter messageEmitter,
         ITypesLoader typesLoader,
         IAsbCache cache,
-        ISagaBehaviour sagaBehaviour,
         ILogger<AsbWorker> logger,
-        ISagaIO sagaIo)
+        ISagaIO sagaIo, 
+        ISagaFactory sagaFactory)
     {
         _hostApplicationLifetime = hostApplicationLifetime;
         _serviceProvider = serviceProvider;
         _messageEmitter = messageEmitter;
         _cache = cache;
-        _sagaBehaviour = sagaBehaviour;
         _logger = logger;
         _sagaIo = sagaIo;
+        _sagaFactory = sagaFactory;
 
         foreach (var handler in typesLoader.Handlers)
         {
@@ -177,7 +177,7 @@ internal sealed class AsbWorker : IHostedService
         var ex = args.Exception as AsbException;
         var correlationId = ex!.CorrelationId;
 
-        var saga = await GetConcreteSaga(sagaType, listenerType, correlationId)
+        var saga = await _sagaFactory.Get(sagaType, listenerType, correlationId, args.CancellationToken)
             .ConfigureAwait(false);
 
         if (saga is SagaAlreadyCompleted)
@@ -189,8 +189,7 @@ internal sealed class AsbWorker : IHostedService
             return;
         }
 
-        var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType,
-            correlationId);
+        var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType);
 
         await broker.HandleError(ex?.OriginalException!, args.CancellationToken)
             .ConfigureAwait(false);
@@ -204,7 +203,7 @@ internal sealed class AsbWorker : IHostedService
 
         try
         {
-            var saga = await GetConcreteSaga(sagaType, listenerType, correlationId)
+            var saga = await _sagaFactory.Get(sagaType, listenerType, correlationId, args.CancellationToken)
                 .ConfigureAwait(false);
 
             if (saga is SagaAlreadyCompleted)
@@ -218,9 +217,8 @@ internal sealed class AsbWorker : IHostedService
                 
                 return;
             }
-
-            var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType,
-                (saga as ISaga)!.CorrelationId);
+            
+            var broker = BrokerFactory.Get(_serviceProvider, sagaType, saga, listenerType);
 
             var asbMessage = await broker.Handle(args.Message.Body, args.CancellationToken)
                 .ConfigureAwait(false);
@@ -281,49 +279,6 @@ internal sealed class AsbWorker : IHostedService
             .ConfigureAwait(false);
 
         return des.Header;
-    }
-
-    private async Task<object?> GetConcreteSaga(SagaType sagaType, SagaHandlerType listenerType,
-        Guid correlationId)
-    {
-        if (_cache.TryGetValue(correlationId, out var saga))
-        {
-            return saga;
-        }
-
-        saga = await _sagaIo.Load(correlationId, sagaType)
-            .ConfigureAwait(false);
-
-        if (saga is not null)
-        {
-            return _cache.Set(correlationId, saga);
-        }
-
-        // if is timeout ok, maybe the saga already completed
-        if (listenerType.IsTimeoutHandler)
-        {
-            return new SagaAlreadyCompleted(sagaType, correlationId);
-        }
-
-        if (!listenerType.IsInitMessageHandler)
-        {
-            throw new SagaNotFoundException(sagaType.Type, correlationId);
-        }
-
-        saga = ActivatorUtilities.CreateInstance(_serviceProvider, sagaType.Type);
-
-        if ((saga as ISaga)!.CorrelationId != Guid.Empty)
-        {
-            correlationId = (saga as ISaga)!.CorrelationId;
-        }
-        else
-        {
-            _sagaBehaviour.SetCorrelationId(sagaType, correlationId, saga);
-        }
-
-        _sagaBehaviour.HandleCompletion(sagaType, correlationId, saga);
-
-        return _cache.Set(correlationId, saga);
     }
 
     private static bool UsesHeavies(IAsbMessage asbMessage)
