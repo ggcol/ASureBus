@@ -3,11 +3,12 @@ using ASureBus.ConfigurationObjects;
 using ASureBus.Core;
 using ASureBus.Core.Entities;
 using ASureBus.Core.MessageProcessing;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.MessageProcessing;
 
-internal class MockProcessor : MessageProcessor
+internal class TestProcessor(ILogger logger) : MessageProcessor(logger)
 {
     public new async Task<AsbMessageHeader?> GetMessageHeader(BinaryData messageBody,
         CancellationToken cancellationToken)
@@ -23,8 +24,17 @@ internal class MockProcessor : MessageProcessor
 
 internal record MockMessage : IAmAMessage;
 
+[TestFixture]
 public class MessageProcessorTests
 {
+    private TestProcessor _processor;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _processor = new TestProcessor(Mock.Of<ILogger>());
+    }
+    
     [Test]
     public async Task GetMessageHeader_ReturnsHeader_WhenMessageBodyIsValid()
     {
@@ -44,10 +54,9 @@ public class MessageProcessorTests
         };
         var validMessageBody = new BinaryData(System.Text.Json.JsonSerializer.Serialize(message));
         var cancellationToken = CancellationToken.None;
-        var processor = new MockProcessor();
 
         // Act
-        var result = await processor.GetMessageHeader(validMessageBody, cancellationToken);
+        var result = await _processor.GetMessageHeader(validMessageBody, cancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -76,11 +85,9 @@ public class MessageProcessorTests
                 IsCommand = It.IsAny<bool>(),
             }
         };
-
-        var processor = new MockProcessor();
-
+        
         // Act
-        var result = processor.UsesHeavies(asbMessage);
+        var result = _processor.UsesHeavies(asbMessage);
 
         // Assert
         Assert.That(result, Is.False);
@@ -106,10 +113,8 @@ public class MessageProcessorTests
             }
         };
 
-        var processor = new MockProcessor();
-
         // Act
-        var result = processor.UsesHeavies(asbMessage);
+        var result = _processor.UsesHeavies(asbMessage);
 
         // Assert
         Assert.That(result, Is.False);
@@ -144,10 +149,8 @@ public class MessageProcessorTests
             }
         };
 
-        var processor = new MockProcessor();
-
         // Act
-        var result = processor.UsesHeavies(asbMessage);
+        var result = _processor.UsesHeavies(asbMessage);
 
         // Assert
         Assert.That(result, Is.True);

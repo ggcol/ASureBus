@@ -18,7 +18,7 @@ internal sealed class SagaMessagesProcessor(
     ISagaIO sagaIo,
     IAsbCache cache,
     IMessageEmitter messageEmitter)
-    : MessageProcessor, IProcessSagaMessages
+    : MessageProcessor(logger), IProcessSagaMessages
 {
     public async Task ProcessMessage(SagaType sagaType,
         SagaHandlerType listenerType, ProcessMessageEventArgs args)
@@ -75,42 +75,29 @@ internal sealed class SagaMessagesProcessor(
                 listenerType.MessageType.Type.Name);
         }
         catch (Exception ex)
+            when (ex is IFailFast)
         {
-            //TODO implement FailFast mechanism
-
-            var actualRetries = args.Message.DeliveryCount;
-            var maxRetries = AsbConfiguration.ServiceBus.ClientOptions.RetryOptions.MaxRetries;
-
+            var failFastMsg = "has failed and will be dead-lettered";
+            await DeadLetterMessage(args, ex, correlationId, listenerType.MessageType.Type, failFastMsg)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
             /*
              * this moves the exception to ProcessError below
-             * while propagation both the original exception
+             * while propagating both the original exception
              * and the correlation id
              */
-            if (actualRetries < maxRetries) throw new AsbException()
-            {
-                OriginalException = ex,
-                CorrelationId = correlationId
-            };
+            if (!IsMaxDeliveryCountExceeded(args.Message.DeliveryCount))
+                throw new AsbException()
+                {
+                    OriginalException = ex,
+                    CorrelationId = correlationId
+                };
 
-            logger.LogError(
-                ex,
-                "Message {MessageId} of type {MessageType} with CorrelationId: {CorrelationId} has reached max retries ({MaxRetries}) and will be dead-lettered",
-                args.Message.MessageId,
-                correlationId,
-                listenerType.MessageType.Type.Name,
-                maxRetries);
+            var maxRetriesMsg = "has reached max retries configured and will be dead-lettered";
 
-            var reasonDescription = string.Join('\n',
-                $"Message: {ex.Message}",
-                $"Stack Trace: {ex.StackTrace}",
-                $"CorrelationId: {correlationId}"
-            );
-
-            await args.DeadLetterMessageAsync(
-                    args.Message,
-                    ex.GetType().Name,
-                    reasonDescription,
-                    args.CancellationToken)
+            await DeadLetterMessage(args, ex, correlationId, listenerType.MessageType.Type, maxRetriesMsg)
                 .ConfigureAwait(false);
         }
     }

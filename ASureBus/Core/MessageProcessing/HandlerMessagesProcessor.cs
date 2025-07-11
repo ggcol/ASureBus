@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using ASureBus.Abstractions;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
@@ -13,7 +14,7 @@ internal sealed class HandlerMessagesProcessor(
     IMessageEmitter messageEmitter,
     ILogger<HandlerMessagesProcessor> logger,
     ISagaFactory sagaFactory)
-    : MessageProcessor, IProcessHandlerMessages
+    : MessageProcessor(logger), IProcessHandlerMessages
 {
     public async Task ProcessMessage(HandlerType handlerType,
         ProcessMessageEventArgs args)
@@ -61,33 +62,19 @@ internal sealed class HandlerMessagesProcessor(
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
+            when (ex is IFailFast)
         {
-            //TODO implement FailFast mechanism
+            var failFastMsg = "has failed and will be dead-lettered";
+            await DeadLetterMessage(args, ex, correlationId, handlerType.MessageType.Type, failFastMsg)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            if (!IsMaxDeliveryCountExceeded(args.Message.DeliveryCount)) throw;
 
-            var actualRetries = args.Message.DeliveryCount;
-            var maxRetries = AsbConfiguration.ServiceBus.ClientOptions.RetryOptions.MaxRetries;
-            
-            if (actualRetries < maxRetries) throw;
-            
-            logger.LogError(
-                ex,
-                "Message {MessageId} with CorrelationId: {CorrealationId} of type {MessageType} has reached max retries ({MaxRetries}) and will be dead-lettered",
-                args.Message.MessageId,
-                correlationId,
-                handlerType.MessageType.Type.Name,
-                maxRetries);
-            
-            var reasonDescription = string.Join('\n',
-                $"Message: {ex.Message}",
-                $"Stack Trace: {ex.StackTrace}",
-                $"CorrelationId: {correlationId}"
-            );
+            var maxRetriesMsg = "has reached max retries configured and will be dead-lettered";
 
-            await args.DeadLetterMessageAsync(
-                    args.Message,
-                    ex.GetType().Name,
-                    ex.Message,
-                    args.CancellationToken)
+            await DeadLetterMessage(args, ex, correlationId, handlerType.MessageType.Type, maxRetriesMsg)
                 .ConfigureAwait(false);
         }
     }
