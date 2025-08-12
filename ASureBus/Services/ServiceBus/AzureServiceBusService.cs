@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using ASureBus.Core;
 using ASureBus.Core.Caching;
+using ASureBus.Core.TypesHandling;
 using ASureBus.Core.TypesHandling.Entities;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -24,8 +25,9 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
     {
         if (handler.MessageType.IsCommand)
         {
-            var queue = await ConfigureQueue(
-                    handler.MessageType.Type.Name, cancellationToken)
+            var queueName = QueueName.Resolve(handler.MessageType.Type);
+            
+            var queue = await ConfigureQueue(queueName, cancellationToken)
                 .ConfigureAwait(false);
 
             return _sbClient.CreateProcessor(queue, _processorOptions);

@@ -100,6 +100,7 @@ await Host
             // services.AddHostedService<LongerSagaInitJob>();
             // services.AddHostedService<SagaWithTimeoutInitJob>();
             // services.AddHostedService<SagaTimeoutTriggeredAfterCompletingInitJob>();
+            // services.AddHostedService<GenericTypeMessagesInitJob>();
             services.AddLogging();
         })
     

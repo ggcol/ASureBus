@@ -2,6 +2,7 @@
 using ASureBus.Abstractions.Options.Messaging;
 using ASureBus.Accessories.Heavy;
 using ASureBus.Core.Entities;
+using ASureBus.Core.TypesHandling;
 
 namespace ASureBus.Core.Messaging;
 
@@ -50,7 +51,7 @@ internal abstract class CollectMessage : ICollectMessage
                 MessageId = messageId,
                 MessageName = typeof(TMessage).Name,
                 Destination = UseDefaultDestination(options)
-                    ? typeof(TMessage).Name
+                    ? QueueName.Resolve(typeof(TMessage))
                     : options!.Destination,
                 CorrelationId = CorrelationId,
                 Heavies = UseHeavies(heavies)
