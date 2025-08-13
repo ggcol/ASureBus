@@ -1,583 +1,385 @@
-# ASB
 
-This is a lightweight messaging framework build on top of Azure Service Bus services
+# ASureBus
+ASureBus is a lightweight .NET messaging framework built on top of Azure Service Bus (ASB). It provides a set of abstractions and helper classes for sending and receiving commands, events and timeouts, handling messages in plain classes or sagas, caching ASB resources, off‑loading heavy properties to Azure Blob Storage, and persisting long‑running workflows.
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/rsb/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/ASureBus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/rsb/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/ASureBus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 
-ASureBus:
-
-[![NuGet version (ASureBus)](https://img.shields.io/nuget/v/ASureBus.svg?style=flat-square)](https://www.nuget.org/packages/ASureBus/)
-
-ASureBus.Abstractions:
-
-[![NuGet version (ASureBus.Abstractions)](https://img.shields.io/nuget/v/ASureBus.Abstractions.svg?style=flat-square)](https://www.nuget.org/packages/ASureBus.Abstractions/)
+[![NuGet version (ASureBus)](https://img.shields.io/nuget/v/ASureBus.svg?style=flat-square)](https://www.nuget.org/packages/ASureBus/) ASureBus
+[![NuGet version (ASureBus.Abstractions)](https://img.shields.io/nuget/v/ASureBus.Abstractions.svg?style=flat-square)](https://www.nuget.org/packages/ASureBus.Abstractions/) ASureBus.Abstractions
 
 
-## Actual dependencies
+## 1. Getting started
 
-- ASureBus:                     
-
-    - Azure.Messaging.Servicebus    
-    - Microsoft.Extensions.Hosting  
-    - Azure.Storage.Blobs           
-    - Microsoft.Data.SqlClient      
-
-- ASureBus.Abstractions:
-
-    - :heavy_check_mark: free from dependencies!
-
-## Setup
-
-### Minimal setup
-
+ASureBus integrates into an `ASP.NET Core` or generic host via extension methods. The minimal setup registers the service bus client, message processors and supporting services:
 ```csharp
 await Host
     .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
+    .UseAsb<TConfig>()                          // registers Azure Service Bus and message processing
     .RunConsoleAsync();
 ```
+Only a connection string is required. You can supply the service bus settings via an options class that implements `IConfigureAzureServiceBus` or by passing a configuration object directly. The most important property is the connection string; other properties (transport type, retry policy, delays, max concurrency) have sensible defaults.
 
-A setting class that implements [IConfigureAzureServiceBus](#basic) must be provided.
-
-or:
-
+You can also configure additional features such as caching, heavy property off‑loading and saga persistence. Each has a fluent extension method and a corresponding options class:
 ```csharp
 await Host
     .CreateDefaultBuilder()
     .UseAsb(new ServiceBusConfig
     {
-        ConnectionString = "connection-string",
-        // All the following are optional, they are initialized as default if not mentioned
-        TransportType = "", // Default is "AmqpWebSocket"
-        MaxRetries = 0, // Default is 3
-        DelayInSeconds = 0, // Default is 0.8
-        MaxDelayInSeconds = 0, // Default is 60
-        TryTimeoutInSeconds = 0, // Default is 300
-        ServiceBusRetryMode = "" // Default is "Fixed"
+        ConnectionString = "<connection-string>",
+        TransportType = "AmqpWebSocket", // optional
+        MaxRetries = 3                   // optional, defaults to 3
     })
-    .RunConsoleAsync();
-```
-
-This overload of UseAsb allows you to manually provide a configuration object for the Service Bus:
-
-### More configurations
-
-Few other configurations are available.
-
-#### AsbCache
-
-Asb uses a custom cache to store service bus senders and topic configurations.
-
-Cache may be configured using a setting class that implements [IConfigureAsbCache](#asbcache-1):
-
-```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .ConfigureAsbCache<CacheSettings>()
-    .RunConsoleAsync();
-```
-
-or:
-
-```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .ConfigureAsbCache(new AsbCacheConfig()
+    .ConfigureAsbCache(new AsbCacheConfig
     {
-        // All these 3 are optional, they are initialized as default if not mentioned
-        Expiration = TimeSpan.FromHours(2), // default is 5 minutes
-        TopicConfigPrefix = "", // default is "topicConfig"
-        ServiceBusSenderCachePrefix = "" // default is "sender"
+        Expiration = TimeSpan.FromMinutes(5),
+        TopicConfigPrefix = "topicConfig",
+        ServiceBusSenderCachePrefix = "sender"
     })
-    .RunConsoleAsync();
-```
-
-This overload of ConfigureAsbCache allows you to manually provide a configuration object for AsbCache; you can specify options like cache expiration, topic configuration prefix, and sender cache prefix. All these options are optional and default to predefined values if not provided.
-
-#### Heavy
-
-Heavies are a way to off-load C# properties that may result in a too heavy payload for Azure Service Bus (limits depends on tier).
-An Azure Storage Account must be provided for this purpose.
-
-Heavies may be configured used a setting class that implements [IConfigureHeavyProperties](#heavy-properties)
-
-```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .UseHeavyProps<HeavySettings>()
-    .RunConsoleAsync();
-```
-
-or:
-
-```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .UseHeavyProps(new HeavyPropertiesConfig()
+    .UseHeavyProps(new HeavyPropertiesConfig
     {
-        ConnectionString = "",
-        Container = ""
+        ConnectionString = "<storage-connection>",
+        Container = "heavies"
     })
-    .RunConsoleAsync();
-```
-
-This overload of UseHeavyProps allows you to manually provide a configuration object for heavy properties, specifying things like the data storage connection string and container.
-
-#### Saga Persistence
-
-Sagas are persisted, without additional configuration, in a memory cache. **This is NOT a good practice for production scenario**, it is only intended for testing and debug purposes. 
-
-Both SQLServer or an Azure Storage Account can be used to persist sagas (still memory cache is used for quicker load times but the persistence is hereby granted on the chosen storage provider).
-
-##### SQL Server saga persistence
-
-Use a settings class that implements [IConfigureSqlServerSagaPersistence](#sql-server-saga-persistence-1)
-
-```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .UseSqlServerSagaPersistence<SqlServerSagaPersistenceSettings>()
-    .RunConsoleAsync();
-```
-
-or:
-
-```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .UseSqlServerSagaPersistence(new SqlServerSagaPersistenceConfig()
+    .UseSqlServerSagaPersistence(new SqlServerSagaPersistenceConfig
     {
-        ConnectionString = ""
+        ConnectionString = "<sql-connection>"
     })
     .RunConsoleAsync();
 ```
+These extension methods register the necessary services for caching senders, off‑loading heavy properties and persisting sagas. See Configuration for detailed descriptions of each option.
 
-This overload of UseSqlServerSagaPersistence allows you to manually provide a configuration object for sql server saga persistence, the connection string is required.
+### 1.1 NuGet packages
 
-##### Azure Storage Account saga persistence
+To use ASureBus in your project, install the following packages:
+- **ASureBus** – the main runtime package providing messaging, sagas, heavy property support and persistence. It pulls in Azure.Messaging.ServiceBus, Azure.Storage.Blobs, Microsoft.Extensions.Hosting and Microsoft.Data.SqlClient as transitive dependencies.
+- **ASureBus.Abstractions** – defines the contracts, marker interfaces and option classes. Reference this package in shared projects or other microservices that only need to define or consume messages; it has no external dependencies.
 
-Use a settings class that implements [IConfigureDataStorageSagaPersistence](#azure-storage-account-saga-persistence-1)
+## 2. Messages and message handlers
 
+ASureBus distinguishes between commands, events and timeouts. All messages implement the marker interface `IAmAMessage`. Commands implement `IAmACommand`, events implement `IAmAnEvent`, and timeout requests implement `IAmATimeout`. A simple message type might look like the following:
 ```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .UseDataStorageSagaPersistence<DataStorageSagaPersistenceSettings>()
-    .RunConsoleAsync();
+public record CreateOrder : IAmACommand
+{
+    public Guid OrderId { get; init; }
+    public decimal Total  { get; init; }
+}
+
+public record OrderCreated : IAmAnEvent
+{
+    public Guid OrderId { get; init; }
+    public DateTimeOffset Timestamp { get; init; }
+}
 ```
 
-or
 
+Handlers are plain classes that implement `IHandleMessage<TMessage>`. The interface defines a `Handle` method that receives the message and an `IMessagingContext` for sending further messages or publishing events. There is an optional `HandleError` method that can override default error handling. Below is a simple command handler:
 ```csharp
-await Host
-    .CreateDefaultBuilder()
-    .UseAsb<ServiceBusSettings>()
-    .UseDataStorageSagaPersistence(new DataStorageSagaPersistenceConfig()
+public class CreateOrderHandler : IHandleMessage<CreateOrder>
+{
+    public async Task Handle(CreateOrder message, IMessagingContext context,
+        CancellationToken cancellationToken = default)
     {
-        ConnectionString = "",
-        Container = ""
-    })
-    .RunConsoleAsync();
-```
+        // perform work…
+        // publish an event after the order is created
+        await context.Publish(new OrderCreated
+        {
+            OrderId   = message.OrderId,
+            Timestamp = DateTimeOffset.UtcNow
+        }, cancellationToken).ConfigureAwait(false);
+    }
 
-This overload of UseDataStorageSagaPersistence allows you to manually provide a configuration object for azure storage account saga persistence, both configurations are required.
-
-## Apis
-
-### Configurations
-
-#### Basic
-
-create a settings class that implements:
-```csharp
-public interface IConfigureAzureServiceBus
-{
-    public string ConnectionString { get; set; }
-    /// <summary>
-    /// May be "AmqpTcp" or "AmqpWebSockets", default is "AmqpWebSocket".
-    /// Maps to Azure.Messaging.ServiceBus.ServiceBusTransportType.
-    /// </summary>
-    public string? TransportType { get; set; }
-    public int? MaxRetries { get; set; }
-    public int? DelayInSeconds { get; set; }
-    public int? MaxDelayInSeconds { get; set; }
-    public int? TryTimeoutInSeconds { get; set; }
-    /// <summary>
-    /// May be "fixed" or "exponential", default is "fixed".
-    /// Maps to Azure.Messaging.ServiceBus.ServiceBusRetryMode.
-    /// </summary>
-    public string? ServiceBusRetryMode { get; set; }
-    public int? MaxConcurrentCalls { get; set; } 
-}
-```
-
-and bind your configs from appsettings/azure app configuration/other configurations provider.
-
-or use a configuration object:
-
-```csharp
-public sealed class ServiceBusConfig : IConfigureAzureServiceBus
-{
-    public required string ConnectionString { get; set; }
-    public string? TransportType { get; set; }
-    public int? MaxRetries { get; set; }
-    public int? DelayInSeconds { get; set; }
-    public int? MaxDelayInSeconds { get; set; }
-    public int? TryTimeoutInSeconds { get; set; }
-    public string? ServiceBusRetryMode { get; set; }
-    public int? MaxConcurrentCalls { get; set; }
-}
-```
-
-both ways the only required settings is the Service bus Conncetion String, all other settings have a default fallback.
-
-#### AsbCache
-
-create a settings class that implements:
-
-```csharp
-public interface IConfigureAsbCache
-{
-    public TimeSpan? Expiration { get; set; }
-    public string? TopicConfigPrefix { get; set; }
-    public string? ServiceBusSenderCachePrefix { get; set; }
-}
-```
-
-and bind your configs from appsettings/azure app configuration/other configurations provider.
-
-or use a configuration object:
-
-```csharp
-public sealed class AsbCacheConfig : IConfigureAsbCache
-{
-    public TimeSpan? Expiration { get; set; }
-    public string? TopicConfigPrefix { get; set; }
-    public string? ServiceBusSenderCachePrefix { get; set; }
-}
-```
-
-none of this settings are required, they all have default fallbacks if not provided.
-
-#### Heavy Properties
-
-create a settings class that implements:
-
-```csharp
-public interface IConfigureHeavyProperties
-{
-    public string ConnectionString { get; set; }
-    public string Container { get; set; }
-}
-```
-
-and bind your configs from appsettings/azure app configuration/other configurations provider.
-
-or use a configuration object:
-
-```csharp
-public sealed class HeavyPropertiesConfig : IConfigureHeavyProperties
-{
-    public required string ConnectionString { get; set; }
-    public required string Container { get; set; }
-}
-```
-
-both settings are required for heavies to works.
-
-#### Saga Persistence
-
-##### SQL Server saga persistence
-
-create a settings class that implements:
-
-```csharp
-public interface IConfigureSqlServerSagaPersistence
-{
-    public string? ConnectionString { get; set; }
-}
-```
-
-and bind your configs from appsettings/azure app configuration/other configurations provider.
-
-or use a configuration object:
-
-```csharp
-public class SqlServerSagaPersistenceConfig : IConfigureSqlServerSagaPersistence
-{
-    public required string ConnectionString { get; set; }
-}
-```
-
-A SQL Server connection string must be provided.
-
-##### Azure Storage Account saga persistence
-
-create a settings class that implements:
-
-```csharp
-public interface IConfigureDataStorageSagaPersistence : IConfigureDataStorage
-{
-    public string ConnectionString { get; set; }
-    public string Container { get; set; }
-}
-```
-
-and bind your configs from appsettings/azure app configuration/other configurations provider.
-
-or use a configuration object:
-
-```csharp
-public sealed class DataStorageSagaPersistenceConfig : ConfigureDataStorageSagaPersistence
-{
-    public required string ConnectionString { get; set; }
-    public required string Container { get; set; }
-}
-```
-
-both settings are required.
-
-### Messages
-
-#### Commands
-
-```csharp
-public interface IAmACommand { }
-```
-usage example:
-```csharp
-public class ACommand : IAmACommand
-{
-    public string? Something { get; init; }
-}
-```
-
-#### Events
-
-```csharp
-public interface IAmAnEvent { }
-```
-usage example:
-```csharp
-public class AnEvent : IAmAnEvent
-{
-    public string? Something { get; set; }
-}
-```
-
-### Message handling
-
-#### Handlers
-
-```csharp
-public interface IHandleMessage<in TMessage>
-    where TMessage : IAmAMessage
-{
-    public Task Handle(TMessage message, IMessagingContext context,
-        CancellationToken cancellationToken = default);
-
+    // optional error hook
     public Task HandleError(Exception ex, IMessagingContext context,
         CancellationToken cancellationToken = default)
     {
-        throw ex;
+        /*
+        * log and swallow, 
+        * or rethrow to let ASureBus dead‑letter the message (this is the default behavior if HandleError() is omitted)
+        */
+        return Task.CompletedTask;
     }
 }
 ```
-usage example:
-```csharp
-public class ACommandHandler : IHandleMessage<ACommand>
-{
-    public async Task Handle(ACommand message, IMessagingContext context,
-        CancellationToken cancellationToken = default)
-    {
-        //do sth
-    }
-}
-```
+Handlers are automatically discovered at startup. ASureBus scans the entry assembly via TypesLoader and registers every type that implements `IHandleMessage<T>`. When a command is sent it is delivered to a single handler (queue semantics), whereas an event is published to a topic and delivered to every subscriber.
 
-#### Sagas
 
+A saga represents a long‑running workflow and tracks state across multiple messages. It derives from the abstract class `Saga<TSagaData>` where TSagaData is a state class. The saga implements interfaces to specify which messages start it (`IAmStartedBy<TInit>`), which messages it handles (`IHandleMessage<TMessage>`) and which timeouts it reacts to (`IHandleTimeout<TTimeout>`). The base class exposes:
+- SagaData – a strongly typed data object that is automatically persisted.
+- CorrelationId – a Guid used to group messages belonging to the same instance.
+- IAmComplete() – call this method when your saga has finished; it triggers the Completed event causing ASureBus to remove it from the cache and persistence store.
+- RequestTimeout<TTimeout> – schedule a timeout message to be delivered after a delay or at an absolute time; the timeout message type must implement `IAmATimeout`.
+
+Example saga:
 ```csharp
-public abstract class Saga<T>
-    where T : SagaData, new()
+public class OrderSagaData : SagaData
 {
-    public T SagaData { get; } = new();
+    public Guid OrderId { get; set; }
+    public bool PaymentReceived { get; set; }
 }
-```
-```csharp
-public abstract class SagaData
+
+public class OrderSaga : Saga<OrderSagaData>,
+    IAmStartedBy<CreateOrder>,
+    IHandleMessage<PaymentReceived>,
+    IHandleTimeout<OrderTimeout>
 {
-}
-```
-usage example:
-```csharp
-public class ASaga : Saga<ASagaData>,
-        IAmStartedBy<ASagaInitCommand>,
-        IHandleMessage<AReply>
-{
-    public async Task Handle(ASagaInitCommand message,
-        IMessagingContext context,
-        CancellationToken cancellationToken = default)
+    public async Task Handle(CreateOrder message, IMessagingContext context,
+        CancellationToken ct)
     {
-        //do sth
+        // initialize state
+        SagaData.OrderId = message.OrderId;
+        // maybe send command to payment service
+        await context.Send(new RequestPayment { OrderId = message.OrderId }, ct);
+        // request timeout if payment isn’t received
+        await RequestTimeout(new OrderTimeout(), TimeSpan.FromMinutes(30), context);
     }
 
-    public async Task Handle(AReply message, IMessagingContext context,
-        CancellationToken cancellationToken = default)
+    public Task Handle(PaymentReceived message, IMessagingContext context,
+        CancellationToken ct)
     {
-        //do sth
-
-        IAmComplete();
-    }
-}
-```
-
-### Send Messages
-
-```csharp
-public interface IMessagingContext
-{
-    public Guid CorrelationId { get; }
-    
-    public Task Send<TCommand>(TCommand message,
-        CancellationToken cancellationToken = default)
-        where TCommand : IAmACommand;
-
-    public Task Publish<TEvent>(TEvent message,
-        CancellationToken cancellationToken = default)
-        where TEvent : IAmAnEvent;
-}
-```
-
-#### Send messages from any class
-
-IMessagingContext is provided by default DI container, simply inject it in your class and use it:
-
-```csharp
-internal class OneCommandInitJob : IHostedService
-{
-    private readonly IMessagingContext _context;
-    private readonly IHostApplicationLifetime _hostApplicationLifetime;
-
-    public OneCommandInitJob(IMessagingContext context,
-        IHostApplicationLifetime hostApplicationLifetime)
-    {
-        _context = context;
-        _hostApplicationLifetime = hostApplicationLifetime;
+        SagaData.PaymentReceived = true;
+        IAmComplete();            // mark saga as completed
+        return Task.CompletedTask;
     }
 
-    public async Task StartAsync(CancellationToken cancellationToken)
+    public async Task HandleTimeout(OrderTimeout timeout, IMessagingContext context,
+        CancellationToken ct)
     {
-        var max = new Random().Next(5);
-
-        for (var i = 0; i <= max; i++)
+        if (!SagaData.PaymentReceived)
         {
-            await _context.Send(new ACommand
-                {
-                    Something = $"{i} - Hello world!"
-                }, cancellationToken)
-                .ConfigureAwait(false);
+            // compensate or notify
+            await context.Send(new CancelOrder { OrderId = SagaData.OrderId }, ct);
+            IAmComplete();
         }
     }
+}
+```
+Sagas are automatically discovered by TypesLoader just like handlers. Persistence is described in the Saga persistence section.
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+### 2.3 Typed Messages and Routing
+
+ASureBus supports generic (typed) messages, allowing you to define message contracts with type parameters. This enables strong typing and flexible message handling. For example:
+```csharp
+public record AGenericMessage<T>(T Data) : IAmACommand;
+
+public class AMessageStringFlavourHandler : IHandleMessage<AGenericMessage<string>>
+{
+    public Task Handle(AGenericMessage<string> genericMessage, IMessagingContext context, CancellationToken cancellationToken)
     {
-        _hostApplicationLifetime.StopApplication();
+        // Handle string-typed message
+        return Task.CompletedTask;
+    }
+}
+
+public class AMessageIntFlavourHandler : IHandleMessage<AGenericMessage<int>>
+{
+    public Task Handle(AGenericMessage<int> genericMessage, IMessagingContext context, CancellationToken cancellationToken)
+    {
+        // Handle int-typed message
+        return Task.CompletedTask;
     }
 }
 ```
+When you send a message such as `AGenericMessage<string>` or `AGenericMessage<int>`, ASureBus will automatically route it to the handler that matches the exact type argument. If you do not configure custom routing, the framework ensures that each message is delivered to the handler whose generic type matches the message type precisely. This allows for clear separation of logic and type-safe message processing.
 
-#### Send messages within an handler
+See `Playground/Samples/12-GenericTypeMessages` for a practical example.
 
-Simply use the already provided messaging context:
+## 3. Configuration
 
+ASureBus exposes several option classes. You can implement the corresponding `IConfigure…` interface and bind it from configuration providers, or instantiate the class explicitly. All optional properties have fallback values from Defaults to minimize boilerplate.
+
+### 3.1 Service Bus (basic)
+
+The following table summarizes the properties of `ServiceBusConfig` (which implements `IConfigureAzureServiceBus`) and their default values:
+
+| Property               | Description                                         | Default         |
+|------------------------|-----------------------------------------------------|-----------------|
+| ConnectionString       | Required. The Azure Service Bus connection string.  | —               |
+| TransportType          | Transport protocol: AmqpTcp or AmqpWebSockets.      | AmqpWebSocket   |
+| MaxRetries             | Number of message receive retries.                  | 3               |
+| DelayInSeconds         | Delay between retry attempts (seconds).             | 0.8             |
+| MaxDelayInSeconds      | Maximum delay between retries.                      | 60              |
+| TryTimeoutInSeconds    | Timeout for each try (seconds).                     | 300             |
+| ServiceBusRetryMode    | fixed or exponential.                               | fixed           |
+| MaxConcurrentCalls     | Maximum concurrent message handlers.                | 20              |
+
+These values configure the ServiceBusClientOptions and the concurrency of the message processors. They are used internally by the AzureServiceBusService when it creates queue and topic processors.
+
+### 3.2 Caching (AsbCache)
+
+ASureBus caches ServiceBusSender instances and topic configurations in an in‑memory cache to avoid repeated network calls. The cache can be tuned via `AsbCacheConfig` (implements `IConfigureAsbCache`):
+- Expiration – optional TimeSpan specifying how long entries stay in the cache (default 5 minutes).
+- TopicConfigPrefix – prefix used for cache keys storing topic/subscription names.
+- ServiceBusSenderCachePrefix – prefix used for cache keys storing ServiceBusSender instances.
+
+Call `.ConfigureAsbCache<T>()` to use settings bound from configuration, or pass an `AsbCacheConfig` object directly. Internally, AsbCache exposes methods to set, upsert and remove entries and is used by AzureServiceBusService to reuse senders and topic subscriptions.
+
+### 3.3 Heavy properties
+
+When messages contain large payloads (for example, file contents or binary data), sending them over Service Bus can exceed the size limits (this strictly depends on selected Azure Service Bus tier). ASureBus introduces the `Heavy<T>` wrapper to transparently off‑load such properties to Azure Blob Storage. To enable this feature, call `.UseHeavyProps()` and provide `HeavyPropertiesConfig` (implements `IConfigureHeavyProperties`):
+- ConnectionString – connection string to the storage account.
+- Container – name of the blob container for storing heavies.
+
+A property of type `Heavy<byte[]>` or `Heavy<string>` is off‑loaded when a message is sent; the Service Bus Message header contains a pointer to the blob, and the actual payload is deleted from the message body. On the receiving side, heavy properties are automatically loaded back from storage. After the message is processed, the heavy blob is deleted. Here is an example message with a heavy property:
 ```csharp
-public class ACommandHandler : IHandleMessage<ACommand>
+public record UploadDocument : IAmACommand
 {
-    public async Task Handle(ACommand message, IMessagingContext context,
-        CancellationToken cancellationToken = default)
-    {
-        await context.Send(new ACommand(), cancellationToken)
-            .ConfigureAwait(false);
-
-        await context.Publish(new AnEvent(), cancellationToken)
-            .ConfigureAwait(false);
-    }
+    public Heavy<byte[]> Content { get; init; } = new();
+    public string FileName { get; init; } = string.Empty;
 }
-```
 
-#### Send options
-
-A part from simple send/publish methods a few overload and options can be used:
-_Send method is used for the sake of examples but the same applies to Publish() method(s)_
-
-##### Delayed messages
-
-```csharp
-var delay = TimeSpan.FromSeconds(20);
-
-var message = new DelayedMessage();
-
-await context.SendAfter(message, delay, cancellationToken)
-    .ConfigureAwait(false);
-        
-// alternative way to send a delayed message
-await context.Send(message, new SendOptions
-    {
-        Delay = delay
-    }, cancellationToken)
-    .ConfigureAwait(false);
-```
-
-##### Scheduled messages
-
-```csharp
-var scheduledTime = new DateTimeOffset(2025, 1, 1, 0, 0, 1, TimeSpan.Zero); 
-
-var message = new ScheduledMessage
+// usage
+await context.Send(new UploadDocument
 {
-    Message = "Happy new year!"
-};
-
-await context.SendScheduled(message, scheduledTime, cancellationToken)
-    .ConfigureAwait(false);
-
-// alternative way to send a scheduled message
-await context.Send(message, new SendOptions
-    {
-        ScheduledTime = scheduledTime
-    }, cancellationToken)
-    .ConfigureAwait(false);
+    Content  = new Heavy<byte[]>(File.ReadAllBytes(path)),
+    FileName = Path.GetFileName(path)
+});
 ```
 
-### Heavy Properties
+### 3.4 Saga persistence
 
+ASureBus stores saga state in an in‑memory cache by default. **This is sufficient for testing but unsuitable for production because data is lost on restart**. You can persist sagas in either SQL Server or Azure Blob Storage. Configuration classes implement `IConfigureSqlServerSagaPersistence` and `IConfigureDataStorageSagaPersistence` respectively. Provide the connection string (and container for data storage) to persist saga snapshots. Use one of the following extension methods:
+- `.UseSqlServerSagaPersistence()` – persists saga data into a table named `<SagaType>` under a default schema (configurable). ASureBus creates the table if it doesn’t exist and uses JSON to serialize the saga data. You only need to supply the connection string.
+- `.UseDataStorageSagaPersistence()` – uses Azure Blob Storage to store saga state. A blob is created for each saga instance; supply a connection string and container name.
+
+Both providers work together with the in‑memory cache (AsbCache) to speed up saga retrieval. When a saga completes, ASureBus deletes its persisted record.
+
+## 4. Messaging API
+
+The `IMessagingContext` interface is injected into handlers, sagas and any other class via DI. It exposes methods to send commands and publish events, with optional delays and scheduling. These methods immediately send messages to the service bus (or the appropriate topic). When used inside sagas and handlers, the context also maintains a correlation ID so that all messages sent within the same handler share the same correlation context.
+
+### 4.1 Sending commands and publishing events
+
+- `Task Send<TCommand>(TCommand message, CancellationToken ct = default)` – sends a command to its queue.
+- `Task Publish<TEvent>(TEvent message, CancellationToken ct = default)` – publishes an event to a topic.
+
+Within handlers or sagas you can simply call `context.Send()` or `context.Publish()` to emit new messages.
+
+### 4.2 Delayed and scheduled messages
+
+ASureBus allows you to delay or schedule messages either via dedicated methods or via options objects:
+- Delayed messages – call `SendAfter(message, TimeSpan delay)` or `PublishAfter(message, TimeSpan delay)` to enqueue the message after a delay. Alternatively, set the `Delay` property on `SendOptions` or `PublishOptions`.
+- Scheduled messages – call `SendScheduled(message, DateTimeOffset scheduledTime)` or `PublishScheduled(message, DateTimeOffset scheduledTime)` to deliver the message at a specific time. Alternatively, set the `ScheduledTime` property on the options object.
+
+Example:
 ```csharp
-public class Heavy<T>() : Heavy
-{
-    public T? Value { get; set; }
+// Delay a command by 20 seconds
+await context.SendAfter(new ExpireCache(), TimeSpan.FromSeconds(20), ct);
 
-    public Heavy(T value) : this()
-    {
-        Value = value;
-    }
-}
+// Equivalent using SendOptions
+await context.Send(new ExpireCache(), new SendOptions
+{
+    Delay = TimeSpan.FromSeconds(20)
+}, ct);
+
+// Schedule a message for New Year’s Day
+await context.SendScheduled(new WishHappyNewYear(), new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero), ct);
 ```
-usage example:
+
+### 4.3 Send/publish options
+
+The `SendOptions` and `PublishOptions` classes derive from a common `EmitOptions` base. They allow you to override the destination queue or topic via the `Destination` property, or specify `Delay` and `ScheduledTime` manually. When both `Delay` and `ScheduledTime` are set, the scheduled time takes precedence. These options are optional and only required when customizing behaviour beyond the defaults.
+
+### 4.4 Correlation binding (Bind)
+
+The `IMessagingContext` exposes a `Bind(Guid correlationId)` method that sets the context’s `CorrelationId` and returns the same context. When messages are enqueued, this correlation identifier is written into the message header so that downstream consumers can associate subsequent messages with the same workflow. Use this method when you need to correlate messages outside of handlers or sagas—e.g. when a background job sends a follow‑up command to an existing saga. Inside handlers and sagas the correlation id is set automatically by the framework; **manually calling `Bind()` within those contexts overrides the existing correlation and can break saga correlation.**
+
+Example:
 ```csharp
-public class HeavyCommand : IAmACommand
-{
-    public Heavy<string> AHeavyProp { get; set; }
-}
+// correlate a message with an existing saga from a background job
+var correlationId = existingSagaId;
+await messagingContext.Bind(correlationId).Send(new CheckStatus());
 ```
 
-## Notes on serialization
+## 5. Heavy property usage
 
-So far serialization is handled by System.Text.Json and no option for a different serializer is exposed.
+The `Heavy<T>` wrapper is central to how ASureBus handles large payloads. When a message is serialized, ASureBus detects `Heavy<T>` properties and uses `HeavyIo.Unload` to off‑load them into Azure Blob Storage. The message header stores a reference to the blob so the heavy payload isn’t transmitted over Service Bus. On the receiving side, `HeavyIo.Load` automatically loads the payload back into the property. After the message is processed the blob is deleted, so there is no accumulation of data.
+
+Because heavies rely on Azure Storage, you must enable them via `.UseHeavyProps()` and provide connection and container settings. Only properties of type `Heavy<T>` are off‑loaded; other properties remain in the message body. You can wrap any serializable type, including strings, byte arrays or custom objects.
+
+## 6. Saga persistence
+
+By default, sagas are cached in memory. To persist them, configure either SQL Server or Azure Storage as described in Section 3.4. Internally, `SagaFactory` attempts to load saga data from the cache first; if it isn’t present it will call the configured persistence service to load the saga from storage. The saga is then stored in both cache and persistence storage for subsequent calls. When the saga calls `IAmComplete()` the data is removed from both the cache and the persistence provider.
+
+- SQL Server persistence – `SqlServerService` creates a table on first use and inserts or updates rows using the saga’s correlation ID as the primary key. The JSON structure includes both the saga data and its correlation ID, so the saga can be reconstructed via `SagaConverter`.
+- Azure Storage persistence – `AzureDataStorageService` stores saga data as blobs. Each blob is named using the saga type and correlation ID; it is deleted when the saga completes.
+
+Using persistence ensures that sagas survive application restarts and that long‑running workflows are durable. For unit tests or simple demos you can omit these calls and rely on the in‑memory cache.
+
+## 7. Error handling and dead‑lettering
+
+ASureBus provides sensible defaults for error handling but also allows developers to influence behaviour:
+- Retry and dead‑letter policy – when a handler or saga throws an exception, the message is retried until the maximum delivery count (`MaxRetries`) is reached. After that the message is dead‑lettered. You can adjust this behaviour via `ServiceBusConfig.MaxRetries`.
+- Fail‑fast exceptions – throw a `FailFastException` (implements `IFailFast`) to immediately dead‑letter the message, bypassing retries. This is useful when the error is permanent (e.g. invalid input).
+- HandleError – override `HandleError` in your handler or saga to perform custom logic on errors. By default, the exception is re‑thrown so that ASureBus performs retries and dead‑letters.
+- Dead‑letter content – when messages are dead‑lettered, ASureBus preserves the original message and adds exception details; heavy blobs are deleted to free storage.
+
+## 8. Internal architecture (optional reading)
+
+While most users do not need to know the internal workings, understanding the components can aid debugging and extension:
+- TypesLoader – scans the entry assembly to find all handlers and sagas and builds metadata used to route messages. It distinguishes commands versus events and records which messages start or continue sagas.
+- Message processors – there are two concrete processors derived from `MessageProcessor`: `HandlerMessagesProcessor` processes plain handlers and `SagaMessagesProcessor` processes sagas. They deserialize messages, load heavy properties via `HeavyIo`, invoke handlers via `BrokerFactory` and `SagaBroker`, and handle completion and errors.
+- Message emitter – `MessageEmitter` flushes pending messages collected in a context. It uses `ServiceBusSender` to send to queues for commands or to topics for events, scheduling messages when required.
+- Caching – `AsbCache` stores `ServiceBusSender` instances and topic subscription names with a configurable expiration. This reduces the overhead of repeatedly creating senders.
+- Configuration – global options are stored in `AsbConfiguration` and updated by the extension methods. Flags such as `UseHeavyProperties`, `OffloadSagas` and others determine which services are enabled.
+- Serialization – messages and saga data are serialized using System.Text.Json via the static `Serializer` class. **There is no pluggable serializer at the moment.**
+
+## 9. Summary
+
+ASureBus brings structure and convenience to Azure Service Bus–based messaging by providing:
+- Fluent configuration for Service Bus, caching, heavy properties and saga persistence.
+- Simple message and handler abstractions for commands, events and timeouts.
+- Built‑in support for sagas with durable persistence and timeout scheduling.
+- Transparent heavy property off‑loading to Azure Blob Storage.
+- Automatic discovery of handlers and sagas and concurrency control.
+- Sensible defaults with extensive configuration options.
+
+By following the patterns described above, developers can build robust, event‑driven systems that leverage Azure Service Bus with minimal boilerplate while still having fine‑grained control over transport settings, caching and persistence.
+
+## 10. Strengths, weaknesses and common constraints
+
+### Strengths
+- Minimal setup – a single `UseAsb()` call registers the service bus, message processors and all required services.
+- Lightweight abstractions – commands, events, timeouts and sagas are simple classes or records; handler and saga discovery is automatic.
+- Heavy property off‑loading allowing large payloads to be stored in Azure Blob Storage.
+- Durable sagas – built‑in persistence for sagas via SQL Server or Azure Storage.
+
+### Weaknesses
+- Single transport – ASureBus only supports Azure Service Bus. Other frameworks (e.g., NServiceBus, MassTransit, ReBus) support multiple brokers, making them more flexible. <br> This is intended so far => *Not actively worked.*
+- Reflection‑based wiring – handler and saga discovery and saga handlers invocation rely on reflection, deferring certain errors to runtime and adding a small overhead. <br> Keep in mind for huge solutions/projects. => *Not actively worked.*
+- Limited customization – there are few hooks for custom serialization, outbox patterns, advanced error handling or per‑queue policies <br>*Actively worked* 
+
+### Common constraints and worries
+- Message size limits – Azure Service Bus imposes a limit on message size; use `Heavy<T>` to off‑load large payloads. Failing to enable heavy property support will result in exceptions when sending large messages.
+- In‑memory cache persistence – without configuring saga persistence the state lives only in memory; restarting the service will lose all saga data.
+- Correlation misuse – calling `Bind()` within a saga or handler will override the correlation id, decoupling messages from the current saga and potentially starting new instances. Reserve `Bind()` for external contexts.
+- Global state – since configuration and caches are static, misconfiguration in one test or service could affect others when running in the same process.
+
+## 11. Playground Samples
+The Playground project provides a rich set of samples demonstrating usage of ASureBus features. Each sample is self-contained and focuses on a specific pattern or capability. You can find these samples in the `/Playground/Samples/` directory:
+
+- [01-OneCommand](Playground/Samples/01-OneCommand): Basic command sending and handling
+- [02-OneEvent](Playground/Samples/02-OneEvent): Event publishing and subscription
+- [03-TwoMessagesSameHandlerClass](Playground/Samples/03-TwoMessagesSameHandlerClass): Handling multiple message types in a single handler
+- [04-ASaga](Playground/Samples/04-ASaga): Basic saga workflow
+- [05-Heavy](Playground/Samples/05-Heavy): Heavy property off-loading to Azure Blob Storage
+- [06-SagaPersistence](Playground/Samples/06-SagaPersistence): Saga persistence with SQL Server/Azure Storage
+- [07-DelayedAndScheduled](Playground/Samples/07-DelayedAndScheduled): Delayed and scheduled message delivery
+- [08-ABrokenSaga](Playground/Samples/08-ABrokenSaga): Error handling in sagas
+- [09-LongerSaga](Playground/Samples/09-LongerSaga): Extended saga workflow
+- [10-SagaWithTimeout](Playground/Samples/10-SagaWithTimeout): Saga with timeout handling
+- [11-SagaTimeoutTriggeredAfterCompleting](Playground/Samples/11-SagaTimeoutTriggeredAfterCompleting): Timeout after saga completion
+- [12-GenericTypeMessages](Playground/Samples/12-GenericTypeMessages): Typed/generic messages and routing
+
+Refer to these samples for practical code examples and inspiration. Throughout this documentation, you will find direct links to relevant samples for each feature:
+
+- **Getting Started**: See [01-OneCommand](Playground/Samples/01-OneCommand)
+- **Events**: See [02-OneEvent](Playground/Samples/02-OneEvent)
+- **Multiple Message Types**: See [03-TwoMessagesSameHandlerClass](Playground/Samples/03-TwoMessagesSameHandlerClass)
+- **Sagas**: See [04-ASaga](Playground/Samples/04-ASaga), [09-LongerSaga](Playground/Samples/09-LongerSaga), [10-SagaWithTimeout](Playground/Samples/10-SagaWithTimeout)
+- **Heavy Properties**: See [05-Heavy](Playground/Samples/05-Heavy)
+- **Saga Persistence**: See [06-SagaPersistence](Playground/Samples/06-SagaPersistence)
+- **Delayed/Scheduled Messages**: See [07-DelayedAndScheduled](Playground/Samples/07-DelayedAndScheduled)
+- **Typed Messages**: See [12-GenericTypeMessages](Playground/Samples/12-GenericTypeMessages)
+- **Error Handling**: See [08-ABrokenSaga](Playground/Samples/08-ABrokenSaga), [11-SagaTimeoutTriggeredAfterCompleting](Playground/Samples/11-SagaTimeoutTriggeredAfterCompleting)
+
+For more details, browse the code in each sample folder.
