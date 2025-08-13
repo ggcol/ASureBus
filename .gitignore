@@ -400,3 +400,5 @@ FodyWeavers.xsd
 
 appsettings.json
 qodana.yaml
+
+**/.DS_Store
