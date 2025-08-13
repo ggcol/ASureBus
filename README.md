@@ -71,7 +71,7 @@ public record OrderCreated : IAmAnEvent
 }
 ```
 
-
+### 2.1 Handlers
 Handlers are plain classes that implement `IHandleMessage<TMessage>`. The interface defines a `Handle` method that receives the message and an `IMessagingContext` for sending further messages or publishing events. There is an optional `HandleError` method that can override default error handling. Below is a simple command handler:
 ```csharp
 public class CreateOrderHandler : IHandleMessage<CreateOrder>
@@ -102,7 +102,7 @@ public class CreateOrderHandler : IHandleMessage<CreateOrder>
 ```
 Handlers are automatically discovered at startup. ASureBus scans the entry assembly via TypesLoader and registers every type that implements `IHandleMessage<T>`. When a command is sent it is delivered to a single handler (queue semantics), whereas an event is published to a topic and delivered to every subscriber.
 
-
+### 2.2 Sagas
 A saga represents a long‑running workflow and tracks state across multiple messages. It derives from the abstract class `Saga<TSagaData>` where TSagaData is a state class. The saga implements interfaces to specify which messages start it (`IAmStartedBy<TInit>`), which messages it handles (`IHandleMessage<TMessage>`) and which timeouts it reacts to (`IHandleTimeout<TTimeout>`). The base class exposes:
 - SagaData – a strongly typed data object that is automatically persisted.
 - CorrelationId – a Guid used to group messages belonging to the same instance.
