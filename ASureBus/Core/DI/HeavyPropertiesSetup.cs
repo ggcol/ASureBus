@@ -43,6 +43,29 @@ public static class HeavyPropertiesSetup
         return hostBuilder;
     }
 
+    public static IHostBuilder UseHeavyProps(
+        this IHostBuilder hostBuilder, Action<HeavyPropertiesOptions> options)
+    {
+        var opt = new HeavyPropertiesOptions();
+        options(opt);
+
+        if (string.IsNullOrWhiteSpace(opt.ConnectionString))
+            throw new ConfigurationNullException(nameof(HeavyPropertiesOptions.ConnectionString));
+        
+        if (string.IsNullOrWhiteSpace(opt.Container))
+            throw new ConfigurationNullException(nameof(HeavyPropertiesOptions.Container));
+        
+        AsbConfiguration.HeavyProps = new HeavyPropertiesConfig
+        {
+            ConnectionString = opt.ConnectionString,
+            Container = opt.Container
+        };
+        
+        ConfigureStorage();
+        
+        return hostBuilder;
+    }
+
     private static void ConfigureStorage()
     {
         HeavyIo.ConfigureStorage(

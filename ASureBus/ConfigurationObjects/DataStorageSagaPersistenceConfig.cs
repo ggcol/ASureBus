@@ -7,3 +7,9 @@ public sealed class DataStorageSagaPersistenceConfig : IConfigureDataStorageSaga
     public required string ConnectionString { get; set; }
     public required string Container { get; set; }
 }
+
+public sealed class DataStorageSagaPersistenceOptions : IConfigureDataStorageSagaPersistence
+{
+    public string? ConnectionString { get; set; }
+    public string? Container { get; set; }
+}

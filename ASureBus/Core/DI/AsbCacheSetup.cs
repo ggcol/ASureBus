@@ -35,4 +35,20 @@ public static class AsbCacheSetup
 
         return hostBuilder;
     }
+    
+    public static IHostBuilder ConfigureAsbCache(
+        this IHostBuilder hostBuilder, Action<AsbCacheConfig> options)
+    {
+        var opt = new AsbCacheConfig();
+        options(opt);
+        
+        AsbConfiguration.Cache = new AsbCacheConfig
+        {
+            Expiration = opt.Expiration,
+            TopicConfigPrefix = opt.TopicConfigPrefix,
+            ServiceBusSenderCachePrefix = opt.ServiceBusSenderCachePrefix
+        };
+
+        return hostBuilder;
+    }
 }

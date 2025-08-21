@@ -40,6 +40,27 @@ public static class SagaPersistenceSetup
 
         return UseDataStorageSagaPersistence(hostBuilder);
     }
+    
+    public static IHostBuilder UseDataStorageSagaPersistence(
+        this IHostBuilder hostBuilder, Action<DataStorageSagaPersistenceOptions> options)
+    {
+        var opt = new DataStorageSagaPersistenceOptions();
+        options.Invoke(opt);
+
+        if (string.IsNullOrWhiteSpace(opt.ConnectionString))
+            throw new ConfigurationNullException(nameof(DataStorageSagaPersistenceOptions.ConnectionString));
+
+        if (string.IsNullOrWhiteSpace(opt.Container))
+            throw new ConfigurationNullException(nameof(DataStorageSagaPersistenceOptions.Container));
+
+        AsbConfiguration.DataStorageSagaPersistence = new DataStorageSagaPersistenceConfig
+        {
+            ConnectionString = opt.ConnectionString,
+            Container = opt.Container
+        };
+
+        return UseDataStorageSagaPersistence(hostBuilder);
+    }
 
     private static IHostBuilder UseDataStorageSagaPersistence(
         IHostBuilder hostBuilder)
@@ -81,6 +102,24 @@ public static class SagaPersistenceSetup
             throw new ConfigurationNullException(nameof(config));
 
         AsbConfiguration.SqlServerSagaPersistence = config;
+
+        return UseSqlServerSagaPersistence(hostBuilder);
+    }
+    
+    public static IHostBuilder UseSqlServerSagaPersistence(
+        this IHostBuilder hostBuilder, Action<SqlServerSagaPersistenceOptions> options)
+    {
+        var opt = new SqlServerSagaPersistenceOptions();
+        options(opt);
+
+        if (string.IsNullOrWhiteSpace(opt.ConnectionString))
+            throw new ConfigurationNullException(nameof(SqlServerSagaPersistenceOptions.ConnectionString));
+
+        AsbConfiguration.SqlServerSagaPersistence = new SqlServerSagaPersistenceConfig
+        {
+            ConnectionString = opt.ConnectionString,
+            Schema = opt.Schema
+        };
 
         return UseSqlServerSagaPersistence(hostBuilder);
     }

@@ -44,6 +44,18 @@ public static class MinimalSetup
         return UseAsb(hostBuilder, true);
     }
 
+    public static IHostBuilder UseAsb(this IHostBuilder hostBuilder, Action<ServiceBusOptions> options)
+    {
+        LoadSettings(options);
+        return UseAsb(hostBuilder);
+    }
+    
+    public static IHostBuilder UseSendOnlyAsb(this IHostBuilder hostBuilder, Action<ServiceBusOptions> options)
+    {
+        LoadSettings(options);
+        return UseAsb(hostBuilder, true);
+    }
+
     private static void LoadSettings<TSettings>(IHostBuilder hostBuilder)
         where TSettings : class, IConfigureAzureServiceBus, new()
     {
@@ -61,6 +73,17 @@ public static class MinimalSetup
             throw new ConfigurationNullException(nameof(ServiceBusConfig));
 
         AsbConfiguration.ServiceBus = new InternalServiceBusConfig(serviceBusConfig);
+    }
+
+    private static void LoadSettings(Action<ServiceBusOptions> options)
+    {
+        var opt = new ServiceBusOptions();
+        options(opt);
+        
+        if (string.IsNullOrWhiteSpace(opt.ConnectionString))
+            throw new ConfigurationNullException(nameof(ServiceBusOptions.ConnectionString));
+
+        AsbConfiguration.ServiceBus = new InternalServiceBusConfig(opt);
     }
 
     private static IHostBuilder UseAsb(IHostBuilder hostBuilder, bool isSendOnly = false)
