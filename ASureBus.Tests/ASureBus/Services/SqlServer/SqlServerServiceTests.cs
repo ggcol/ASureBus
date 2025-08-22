@@ -1,5 +1,5 @@
 ﻿using ASureBus.Abstractions;
-using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core;
 using ASureBus.Core.TypesHandling.Entities;
 using ASureBus.Services.SqlServer;

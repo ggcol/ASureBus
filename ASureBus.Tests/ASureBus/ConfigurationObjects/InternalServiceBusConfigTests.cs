@@ -1,4 +1,5 @@
 ﻿using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using Azure.Messaging.ServiceBus;
 
 namespace ASureBus.Tests.ASureBus.ConfigurationObjects;

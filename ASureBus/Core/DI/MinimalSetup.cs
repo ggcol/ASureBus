@@ -1,9 +1,12 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
+using ASureBus.ConfigurationObjects.Options;
 using ASureBus.Core.Caching;
 using ASureBus.Core.MessageProcessing;
+using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling;
@@ -104,7 +107,8 @@ public static class MinimalSetup
                     .AddSingleton<IMessageEmitter, MessageEmitter>()
                     .AddSingleton<ISagaIO, SagaIO>()
                     .AddSingleton<IProcessSagaMessages, SagaMessagesProcessor>()
-                    .AddSingleton<IProcessHandlerMessages, HandlerMessagesProcessor>();
+                    .AddSingleton<IProcessHandlerMessages, HandlerMessagesProcessor>()
+                    .AddSingleton<IMessageLockObserver, MessageLockObserver>();
                 
 
                 if (!isSendOnly)

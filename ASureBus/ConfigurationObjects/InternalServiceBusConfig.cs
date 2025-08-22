@@ -1,4 +1,5 @@
 ﻿using ASureBus.Abstractions.Configurations;
+using ASureBus.ConfigurationObjects.Options;
 using Azure.Messaging.ServiceBus;
 
 namespace ASureBus.ConfigurationObjects;
@@ -6,8 +7,9 @@ namespace ASureBus.ConfigurationObjects;
 internal sealed class InternalServiceBusConfig
 {
     public string ConnectionString { get; }
-    public ServiceBusClientOptions ClientOptions { get; }
-    public int MaxConcurrentCalls { get; }
+    public ServiceBusClientOptions ClientOptions { get; set; }
+    public int MaxConcurrentCalls { get; set; }
+    public MessageLockRenewalOptions MessageLockOptions { get; set; }
 
     public InternalServiceBusConfig(IConfigureAzureServiceBus config)
     {
@@ -43,5 +45,14 @@ internal sealed class InternalServiceBusConfig
             }
         };
         MaxConcurrentCalls = config.MaxConcurrentCalls ?? Defaults.ServiceBus.MAX_CONCURRENT_CALLS;
+
+        MessageLockOptions = new MessageLockRenewalOptions()
+        {
+            EnableMessageLockAutoRenewal =
+                config.EnableMessageLockAutoRenewal ?? Defaults.ServiceBus.ENABLE_MESSAGE_LOCK_AUTO_RENEWAL,
+            MessageLockRenewalPreemptiveThresholdInSeconds =
+                config.MessageLockRenewalPreemptiveThresholdInSeconds
+                ?? Defaults.ServiceBus.MESSAGE_LOCK_RENEWAL_PREEMPTIVE_THRESHOLD_IN_SECONDS
+        };
     }
 }

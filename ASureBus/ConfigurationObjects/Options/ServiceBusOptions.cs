@@ -1,8 +1,8 @@
-﻿using ASureBus.Abstractions.Configurations;
+using ASureBus.Abstractions.Configurations;
 
-namespace Playground.Settings;
+namespace ASureBus.ConfigurationObjects.Options;
 
-public abstract class ServiceBusSettings : IConfigureAzureServiceBus
+public sealed class ServiceBusOptions: IConfigureAzureServiceBus
 {
     public string? ConnectionString { get; set; }
     public string? TransportType { get; set; }
@@ -15,7 +15,3 @@ public abstract class ServiceBusSettings : IConfigureAzureServiceBus
     public bool? EnableMessageLockAutoRenewal { get; set; }
     public int? MessageLockRenewalPreemptiveThresholdInSeconds { get; set; }
 }
-
-public class WholeServiceBusSettings : ServiceBusSettings { }
-
-public class PartialServiceBusSettings : ServiceBusSettings { }

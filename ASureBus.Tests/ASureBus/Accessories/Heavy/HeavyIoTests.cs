@@ -1,6 +1,6 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Accessories.Heavy;
-using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core;
 using ASureBus.Services.StorageAccount;
 using Moq;

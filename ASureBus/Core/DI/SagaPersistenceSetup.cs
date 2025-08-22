@@ -1,6 +1,7 @@
 ﻿using ASureBus.Abstractions.Configurations;
-using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
+using ASureBus.ConfigurationObjects.Options;
 using ASureBus.Services;
 using ASureBus.Services.SqlServer;
 using ASureBus.Services.StorageAccount;

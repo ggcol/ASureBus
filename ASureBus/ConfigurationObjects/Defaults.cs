@@ -28,6 +28,8 @@ internal static class Defaults
         };
         
         internal const int MAX_CONCURRENT_CALLS = 20;
+        internal const bool ENABLE_MESSAGE_LOCK_AUTO_RENEWAL = false;
+        internal const int MESSAGE_LOCK_RENEWAL_PREEMPTIVE_THRESHOLD_IN_SECONDS = 10;
     }
     
     internal static class SqlServerSagaPersistence

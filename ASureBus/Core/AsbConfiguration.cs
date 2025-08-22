@@ -1,6 +1,5 @@
-﻿// ReSharper disable InconsistentNaming
-
-using ASureBus.ConfigurationObjects;
+﻿using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 
 namespace ASureBus.Core;
 
@@ -20,4 +19,9 @@ internal static class AsbConfiguration
     internal static bool UseSqlServerSagaPersistence => SqlServerSagaPersistence is not null;
     public static DataStorageSagaPersistenceConfig? DataStorageSagaPersistence { get; set; }
     public static SqlServerSagaPersistenceConfig? SqlServerSagaPersistence { get; set; }
+
+    //message lock renewal configuration
+    public static bool EnableMessageLockAutoRenewal
+        => ServiceBus.MessageLockOptions.EnableMessageLockAutoRenewal.HasValue
+           && ServiceBus.MessageLockOptions.EnableMessageLockAutoRenewal.Value;
 }

@@ -27,21 +27,24 @@ await Host
      */
 
     // Configure the application to use Azure Service Bus with the specified settings
-    .UseAsb<WholeServiceBusSettings>()
-    .UseAsb<PartialServiceBusSettings>()
+    // .UseAsb<WholeServiceBusSettings>()
+    // .UseAsb<PartialServiceBusSettings>()
     
     // Configure the application to use Azure Service Bus with a custom configuration
-    .UseAsb(new ServiceBusConfig
-    {
-        ConnectionString = "connection-string",
-        // All the following are optional, they are initialized as default if not mentioned
-        TransportType = "", // Default is "AmqpWebSocket"
-        MaxRetries = 0, // Default is 3
-        DelayInSeconds = 0, // Default is 0.8
-        MaxDelayInSeconds = 0, // Default is 60
-        TryTimeoutInSeconds = 0, // Default is 300
-        ServiceBusRetryMode = "" // Default is "Fixed"
-    })
+    // .UseAsb(new ServiceBusConfig
+    // {
+    //     ConnectionString = "connection-string",
+    //     // All the following are optional, they are initialized as default if not mentioned
+    //     TransportType = "", // Default is "AmqpWebSocket"
+    //     MaxRetries = 0, // Default is 3
+    //     DelayInSeconds = 0, // Default is 0.8
+    //     MaxDelayInSeconds = 0, // Default is 60
+    //     TryTimeoutInSeconds = 0, // Default is 300
+    //     ServiceBusRetryMode = "", // Default is "Fixed"
+    //     MaxConcurrentCalls = 5, // Default is 20
+    //     EnableMessageLockAutoRenewal, = false // Default is false
+    //     MessageLockRenewalPreemptiveThresholdInSeconds = 20 // Default is 10
+    // })
     
     // Configure the application to use Azure Service Bus using delegate
     .UseAsb((opt) =>
@@ -54,7 +57,36 @@ await Host
         opt.MaxDelayInSeconds = 0; // Default is 60
         opt.TryTimeoutInSeconds = 0; // Default is 300
         opt.ServiceBusRetryMode = ""; // Default is "Fixed"
+        opt.MaxConcurrentCalls = 5; // Default is 20
+        opt.EnableMessageLockAutoRenewal = false; // Default is false
+        opt.MessageLockRenewalPreemptiveThresholdInSeconds = 20; // Default is 10
     })
+    
+    
+    
+    /*
+     * ========================================
+     * ASB single behavior setup
+     * ========================================
+     */
+    
+    // .ConfigureMaxConcurrentCalls(opt =>
+    // {
+    //     opt.MaxConcurrentCalls = 100; // Default is 20
+    // })
+    //
+    // .ConfigureMessageLockHandling(opt =>
+    // {
+    //     opt.EnableMessageLockAutoRenewal = true; // Default is false
+    //     opt.MessageLockRenewalPreemptiveThresholdInSeconds = 30; // Default is 10
+    // })
+    //
+    // .ConfigureServiceBusClientOptions(opt =>
+    // {
+    //     //se ms-doc for ServiceBusClientOptions
+    // })
+    
+    
     
     /*
      * ========================================

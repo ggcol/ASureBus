@@ -1,6 +1,6 @@
 ﻿using ASureBus.Abstractions.Configurations;
 
-namespace ASureBus.ConfigurationObjects;
+namespace ASureBus.ConfigurationObjects.Config;
 
 public class SqlServerSagaPersistenceConfig : IConfigureSqlServerSagaPersistence
 {
@@ -12,11 +12,4 @@ public class SqlServerSagaPersistenceConfig : IConfigureSqlServerSagaPersistence
         get => _schema ?? Defaults.SqlServerSagaPersistence.SCHEMA; 
         set => _schema = value;
     }
-}
-
-public class SqlServerSagaPersistenceOptions : IConfigureSqlServerSagaPersistence
-{
-    public string? ConnectionString { get; set; }
-    
-    public string? Schema { get; set; } = Defaults.SqlServerSagaPersistence.SCHEMA;
 }

@@ -1,4 +1,5 @@
 ﻿using ASureBus.Core.MessageProcessing;
+using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.TypesHandling;
 using ASureBus.Core.TypesHandling.Entities;
 using ASureBus.Services.ServiceBus;
@@ -12,13 +13,14 @@ internal sealed class AsbWorker : IHostedService
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
     private readonly Dictionary<ListenerType, ServiceBusProcessor> _processors = new();
-    
+
     public AsbWorker(
         IHostApplicationLifetime hostApplicationLifetime,
         IAzureServiceBusService azureServiceBusService,
-        ITypesLoader typesLoader, 
-        IProcessSagaMessages sagaProcessor, 
-        IProcessHandlerMessages handlerProcessor)
+        ITypesLoader typesLoader,
+        IProcessSagaMessages sagaProcessor,
+        IProcessHandlerMessages handlerProcessor,
+        IMessageLockObserver messageLockObserver)
     {
         _hostApplicationLifetime = hostApplicationLifetime;
 
@@ -30,10 +32,17 @@ internal sealed class AsbWorker : IHostedService
                 .GetAwaiter()
                 .GetResult();
 
-            processor.ProcessMessageAsync += async args 
-                => await handlerProcessor.ProcessMessage(handler, args).ConfigureAwait(false);
+            processor.ProcessMessageAsync += async args =>
+            {
+                if (AsbConfiguration.EnableMessageLockAutoRenewal)
+                {
+                    messageLockObserver.RenewOnExpiration(args);
+                }
 
-            processor.ProcessErrorAsync += async args 
+                await handlerProcessor.ProcessMessage(handler, args).ConfigureAwait(false);
+            };
+
+            processor.ProcessErrorAsync += async args
                 => await handlerProcessor.ProcessError(handler, args).ConfigureAwait(false);
 
             _processors.Add(handler, processor);
@@ -49,9 +58,16 @@ internal sealed class AsbWorker : IHostedService
                     .GetAwaiter()
                     .GetResult();
 
-                processor.ProcessMessageAsync += async args 
-                    => await sagaProcessor.ProcessMessage(saga, listener, args).ConfigureAwait(false);
-                
+                processor.ProcessMessageAsync += async args =>
+                {
+                    if (AsbConfiguration.EnableMessageLockAutoRenewal)
+                    {
+                        messageLockObserver.RenewOnExpiration(args);
+                    }
+
+                    await sagaProcessor.ProcessMessage(saga, listener, args).ConfigureAwait(false);
+                };
+
                 processor.ProcessErrorAsync += async args
                     => await sagaProcessor.ProcessError(saga, listener, args).ConfigureAwait(false);
 

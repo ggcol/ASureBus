@@ -1,7 +1,8 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.Accessories.Heavy;
-using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
+using ASureBus.ConfigurationObjects.Options;
 using ASureBus.Services.StorageAccount;
 using ASureBus.Utils;
 using Microsoft.Extensions.Hosting;

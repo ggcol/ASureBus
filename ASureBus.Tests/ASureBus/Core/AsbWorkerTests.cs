@@ -1,6 +1,7 @@
 ﻿using Moq;
 using ASureBus.Core;
 using ASureBus.Core.MessageProcessing;
+using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.TypesHandling;
 using ASureBus.Core.TypesHandling.Entities;
 using ASureBus.Services.ServiceBus;
@@ -47,7 +48,8 @@ public class AsbWorkerTests
             mockAzureServiceBusService.Object,
             mockTypesLoader.Object,
             Mock.Of<IProcessSagaMessages>(),
-            Mock.Of<IProcessHandlerMessages>());
+            Mock.Of<IProcessHandlerMessages>(),
+            Mock.Of<IMessageLockObserver>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -102,7 +104,8 @@ public class AsbWorkerTests
             mockAzureServiceBusService.Object,
             mockTypesLoader.Object,
             Mock.Of<IProcessSagaMessages>(),
-            Mock.Of<IProcessHandlerMessages>());
+            Mock.Of<IProcessHandlerMessages>(),
+            Mock.Of<IMessageLockObserver>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -147,7 +150,8 @@ public class AsbWorkerTests
             mockAzureServiceBusService.Object,
             mockTypesLoader.Object,
             Mock.Of<IProcessSagaMessages>(),
-            Mock.Of<IProcessHandlerMessages>());
+            Mock.Of<IProcessHandlerMessages>(),
+            Mock.Of<IMessageLockObserver>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
@@ -202,7 +206,8 @@ public class AsbWorkerTests
             mockAzureServiceBusService.Object,
             mockTypesLoader.Object,
             Mock.Of<IProcessSagaMessages>(),
-            Mock.Of<IProcessHandlerMessages>());
+            Mock.Of<IProcessHandlerMessages>(), 
+            Mock.Of<IMessageLockObserver>());
 
         // Act
         await worker.StartAsync(CancellationToken.None);
