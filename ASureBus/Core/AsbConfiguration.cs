@@ -1,5 +1,6 @@
 ﻿using ASureBus.ConfigurationObjects;
 using ASureBus.ConfigurationObjects.Config;
+using ASureBus.ConfigurationObjects.Options;
 
 namespace ASureBus.Core;
 
@@ -8,7 +9,7 @@ internal static class AsbConfiguration
     //basic configuration
     public static InternalServiceBusConfig ServiceBus { get; set; } = null!;
     public static AsbCacheConfig Cache { get; set; } = new();
-
+    public static MessageLockRenewalOptions MessageLockOptions { get; set; } = new();
     //heavy props configuration
     internal static bool UseHeavyProperties => HeavyProps is not null;
     public static HeavyPropertiesConfig? HeavyProps { get; set; }
@@ -22,6 +23,6 @@ internal static class AsbConfiguration
 
     //message lock renewal configuration
     public static bool EnableMessageLockAutoRenewal
-        => ServiceBus.MessageLockOptions.EnableMessageLockAutoRenewal.HasValue
-           && ServiceBus.MessageLockOptions.EnableMessageLockAutoRenewal.Value;
+        => MessageLockOptions.EnableMessageLockAutoRenewal.HasValue
+           && MessageLockOptions.EnableMessageLockAutoRenewal.Value;
 }

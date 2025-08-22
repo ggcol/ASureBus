@@ -13,7 +13,7 @@ public static class Configurations
         var opt = new MessageLockRenewalOptions();
         enableMessageLockAutoRenewal(opt);
 
-        AsbConfiguration.ServiceBus.MessageLockOptions = opt;
+        AsbConfiguration.MessageLockOptions = opt;
         return hostBuilder;
     }
     
