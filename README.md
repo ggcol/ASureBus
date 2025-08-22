@@ -243,6 +243,36 @@ ASureBus stores saga state in an in‑memory cache by default. **This is suffici
 
 Both providers work together with the in‑memory cache (AsbCache) to speed up saga retrieval. When a saga completes, ASureBus deletes its persisted record.
 
+### 3.5 Message lock auto‑renewal
+Azure Service Bus locks a message for a short period (typically 30 seconds) when it is received. If your handler or saga takes longer than this to process the message, the lock can expire and the message becomes visible to other consumers, potentially leading to duplicate processing. ASureBus can automatically renew the message lock just before it expires.
+The auto‑renewal feature is disabled by default to avoid unnecessary network calls. To enable it, set the `EnableMessageLockAutoRenewal` property on your service bus configuration or call the `.ConfigureMessageLockHandling()` extension method. You can also set the `MessageLockRenewalPreemptiveThresholdInSeconds` to control how many seconds before the lock expiry the renewal should occur. The default threshold is 10 seconds.
+
+```csharp
+// enabling lock auto‑renewal via ServiceBusConfig
+await Host.CreateDefaultBuilder()
+    .UseAsb(new ServiceBusConfig
+    {
+        ConnectionString = "<connection-string>",
+        EnableMessageLockAutoRenewal = true,
+        MessageLockRenewalPreemptiveThresholdInSeconds = 5
+    })
+    .RunConsoleAsync();
+
+// enabling lock auto‑renewal via ConfigureMessageLockHandling
+await Host.CreateDefaultBuilder()
+    .UseAsb()
+    .ConfigureMessageLockHandling(opt =>
+    {
+        opt.EnableMessageLockAutoRenewal = true;
+        opt.MessageLockRenewalPreemptiveThresholdInSeconds = 5;
+    })
+    .RunConsoleAsync();
+```
+When auto‑renewal is enabled, ASureBus attaches a lock observer to each incoming message. This observer starts a timer based on the remaining lock duration minus the preemptive threshold. When the timer fires, it calls `RenewMessageLockAsync` on the message to extend the lock and then removes itself
+GitHub
+GitHub
+. Adjusting the threshold lets you control how aggressively the renewal happens: a smaller threshold renews the lock earlier but may result in more renewals on short‑running handlers, while a larger threshold risks missing the renewal window if message processing slows down.
+
 ## 4. Messaging API
 
 The `IMessagingContext` interface is injected into handlers, sagas and any other class via DI. It exposes methods to send commands and publish events, with optional delays and scheduling. These methods immediately send messages to the service bus (or the appropriate topic). When used inside sagas and handlers, the context also maintains a correlation ID so that all messages sent within the same handler share the same correlation context.
