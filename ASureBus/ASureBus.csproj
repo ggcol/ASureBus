@@ -6,15 +6,20 @@
         <Nullable>enable</Nullable>
         <RepositoryUrl>https://github.com/ggcol/ASureBus</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageReadmeFile>LICENSE.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
-      <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
-      <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
-      <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+        <None Include="../README.md" Pack="true" PackagePath="\"/>
+        <None Include="../LICENSE" Pack="true" PackagePath="\"/>
+
+        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1"/>
+        <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0"/>
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1"/>
     </ItemGroup>
-    
+
     <ItemGroup>
         <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
             <_Parameter1>Playground</_Parameter1>
@@ -26,9 +31,9 @@
             <_Parameter1>DynamicProxyGenAssembly2</_Parameter1>
         </AssemblyAttribute>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\ASureBus.Abstractions\ASureBus.Abstractions.csproj" />
+        <ProjectReference Include="..\ASureBus.Abstractions\ASureBus.Abstractions.csproj"/>
     </ItemGroup>
 
 </Project>

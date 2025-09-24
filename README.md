@@ -416,3 +416,12 @@ Refer to these samples for practical code examples and inspiration. Throughout t
 - **Error Handling**: See [08-ABrokenSaga](Playground/Samples/08-ABrokenSaga), [11-SagaTimeoutTriggeredAfterCompleting](Playground/Samples/11-SagaTimeoutTriggeredAfterCompleting)
 
 For more details, browse the code in each sample folder.
+
+## 12. License
+
+ASureBus is licensed under the [LGPL-3.0-or-later](LICENSE) license.
+
+This means:
+- ✅ You can freely use this library in proprietary or open-source projects.
+- ✅ You can distribute software that uses this library under any license.
+- ✅ If you modify ASureBus itself and distribute it, you must publish those changes under LGPL.
