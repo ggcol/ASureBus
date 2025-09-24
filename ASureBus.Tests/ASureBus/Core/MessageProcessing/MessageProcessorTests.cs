@@ -59,7 +59,7 @@ public class MessageProcessorTests
         var result = await _processor.GetMessageHeader(validMessageBody, cancellationToken);
 
         // Assert
-        Assert.NotNull(result);
+        Assert.That(result, Is.Not.Null);
         Assert.That(result.MessageId, Is.EqualTo(messageId));
     }
 
