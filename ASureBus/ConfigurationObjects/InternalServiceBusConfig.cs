@@ -52,7 +52,9 @@ internal sealed class InternalServiceBusConfig
                 config.EnableMessageLockAutoRenewal ?? Defaults.ServiceBus.ENABLE_MESSAGE_LOCK_AUTO_RENEWAL,
             MessageLockRenewalPreemptiveThresholdInSeconds =
                 config.MessageLockRenewalPreemptiveThresholdInSeconds
-                ?? Defaults.ServiceBus.MESSAGE_LOCK_RENEWAL_PREEMPTIVE_THRESHOLD_IN_SECONDS
+                ?? Defaults.ServiceBus.MESSAGE_LOCK_RENEWAL_PREEMPTIVE_THRESHOLD_IN_SECONDS,
+            MaxAutoLockRenewalDuration = 
+                config.MaxAutoLockRenewalDuration ?? Defaults.ServiceBus.MAX_AUTO_LOCK_RENEWAL_DURATION
         };
     }
 }

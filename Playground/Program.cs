@@ -1,4 +1,5 @@
 ﻿using ASureBus.ConfigurationObjects;
+using ASureBus.ConfigurationObjects.Config;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Playground.Samples._06_SagaPersistence;
@@ -42,8 +43,9 @@ await Host
     //     TryTimeoutInSeconds = 0, // Default is 300
     //     ServiceBusRetryMode = "", // Default is "Fixed"
     //     MaxConcurrentCalls = 5, // Default is 20
-    //     EnableMessageLockAutoRenewal, = false // Default is false
-    //     MessageLockRenewalPreemptiveThresholdInSeconds = 20 // Default is 10
+    //     EnableMessageLockAutoRenewal = false, // Default is false
+    //     MessageLockRenewalPreemptiveThresholdInSeconds = 20, // Default is 10
+    //     MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(20) // Default is 5 minutes
     // })
     
     // Configure the application to use Azure Service Bus using delegate
@@ -60,6 +62,7 @@ await Host
         opt.MaxConcurrentCalls = 5; // Default is 20
         opt.EnableMessageLockAutoRenewal = false; // Default is false
         opt.MessageLockRenewalPreemptiveThresholdInSeconds = 20; // Default is 10
+        opt.MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(20); // Default is 5 minutes
     })
     
     
@@ -70,17 +73,26 @@ await Host
      * ========================================
      */
     
+    // MAX CONCURRENT CALLS
+    
     // .ConfigureMaxConcurrentCalls(opt =>
     // {
     //     opt.MaxConcurrentCalls = 100; // Default is 20
     // })
-    //
+    
+    
+    // MESSAGE LOCK HANDLING
+    
     // .ConfigureMessageLockHandling(opt =>
     // {
     //     opt.EnableMessageLockAutoRenewal = true; // Default is false
     //     opt.MessageLockRenewalPreemptiveThresholdInSeconds = 30; // Default is 10
+    //     opt.MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(20); // Default is 5 minutes
     // })
-    //
+    
+    
+    // SERVICE BUS CLIENT OPTIONS
+    
     // .ConfigureServiceBusClientOptions(opt =>
     // {
     //     //se ms-doc for ServiceBusClientOptions
@@ -177,6 +189,7 @@ await Host
             // services.AddHostedService<SagaWithTimeoutInitJob>();
             // services.AddHostedService<SagaTimeoutTriggeredAfterCompletingInitJob>();
             // services.AddHostedService<GenericTypeMessagesInitJob>();
+            
             services.AddLogging();
         })
     
