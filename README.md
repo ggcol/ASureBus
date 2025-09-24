@@ -201,6 +201,7 @@ The following table summarizes the properties of `ServiceBusConfig` (which imple
 | TryTimeoutInSeconds    | Timeout for each try (seconds).                     | 300             |
 | ServiceBusRetryMode    | fixed or exponential.                               | fixed           |
 | MaxConcurrentCalls     | Maximum concurrent message handlers.                | 20              |
+| MaxAutoLockRenewalDuration | Maximum duration to auto-renew message locks.       | 5 minutes       |
 
 These values configure the ServiceBusClientOptions and the concurrency of the message processors. They are used internally by the AzureServiceBusService when it creates queue and topic processors.
 
@@ -247,6 +248,8 @@ Both providers work together with the in‑memory cache (AsbCache) to speed up s
 Azure Service Bus locks a message for a short period (typically 30 seconds) when it is received. If your handler or saga takes longer than this to process the message, the lock can expire and the message becomes visible to other consumers, potentially leading to duplicate processing. ASureBus can automatically renew the message lock just before it expires.
 The auto‑renewal feature is disabled by default to avoid unnecessary network calls. To enable it, set the `EnableMessageLockAutoRenewal` property on your service bus configuration or call the `.ConfigureMessageLockHandling()` extension method. You can also set the `MessageLockRenewalPreemptiveThresholdInSeconds` to control how many seconds before the lock expiry the renewal should occur. The default threshold is 10 seconds.
 
+You can also set the `MaxAutoLockRenewalDuration` property to control the maximum total time (in seconds) that ASureBus will attempt to auto-renew the lock for a message. The default is 5 minutes (which is also Azure Service Bus default). If message processing exceeds this duration, the lock will not be renewed further and the message may become visible to other consumers.
+
 ```csharp
 // enabling lock auto‑renewal via ServiceBusConfig
 await Host.CreateDefaultBuilder()
@@ -254,7 +257,8 @@ await Host.CreateDefaultBuilder()
     {
         ConnectionString = "<connection-string>",
         EnableMessageLockAutoRenewal = true,
-        MessageLockRenewalPreemptiveThresholdInSeconds = 5
+        MessageLockRenewalPreemptiveThresholdInSeconds = 5,
+        MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(10) 
     })
     .RunConsoleAsync();
 
@@ -265,13 +269,12 @@ await Host.CreateDefaultBuilder()
     {
         opt.EnableMessageLockAutoRenewal = true;
         opt.MessageLockRenewalPreemptiveThresholdInSeconds = 5;
+        opt.MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(10);
     })
     .RunConsoleAsync();
 ```
-When auto‑renewal is enabled, ASureBus attaches a lock observer to each incoming message. This observer starts a timer based on the remaining lock duration minus the preemptive threshold. When the timer fires, it calls `RenewMessageLockAsync` on the message to extend the lock and then removes itself
-GitHub
-GitHub
-. Adjusting the threshold lets you control how aggressively the renewal happens: a smaller threshold renews the lock earlier but may result in more renewals on short‑running handlers, while a larger threshold risks missing the renewal window if message processing slows down.
+When auto‑renewal is enabled, ASureBus attaches a lock observer to each incoming message. This observer starts a timer based on the remaining lock duration minus the preemptive threshold. When the timer fires, it calls `RenewMessageLockAsync` on the message to extend the lock and then removes itself.
+Adjusting the threshold lets you control how aggressively the renewal happens: a smaller threshold renews the lock earlier but may result in more renewals on short‑running handlers, while a larger threshold risks missing the renewal window if message processing slows down.
 
 ## 4. Messaging API
 
