@@ -77,9 +77,12 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
     }
 
     private async Task<TopicConfiguration> ConfigureTopicForReceiver(
-        MemberInfo messageType, CancellationToken cancellationToken = default)
+        Type messageType, CancellationToken cancellationToken = default)
     {
-        var config = new TopicConfiguration(messageType.Name,
+        var queueName = QueueName.Resolve(messageType);
+        
+        var config = new TopicConfiguration(
+            queueName,
             Assembly.GetEntryAssembly()?.GetName().Name);
 
         var cacheKey = CacheKey(AsbConfiguration.Cache.TopicConfigPrefix,
