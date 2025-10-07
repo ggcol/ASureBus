@@ -6,7 +6,7 @@ on:
             major:
                 description: 'Major version'
                 required: true
-                default: '1'
+                default: '2'
             minor:
                 description: 'Minor version'
                 required: true
