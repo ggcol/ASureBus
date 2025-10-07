@@ -8,7 +8,6 @@ internal sealed class InternalServiceBusConfig
 {
     public string ConnectionString { get; }
     public ServiceBusClientOptions ClientOptions { get; set; }
-    public MessageLockRenewalOptions MessageLockOptions { get; set; }
 
     public InternalServiceBusConfig(IConfigureAzureServiceBus config)
     {
@@ -42,17 +41,6 @@ internal sealed class InternalServiceBusConfig
                     ? TimeSpan.FromSeconds(config.TryTimeoutInSeconds.Value)
                     : Defaults.ServiceBus.CLIENT_OPTIONS.RetryOptions.TryTimeout
             }
-        };
-
-        MessageLockOptions = new MessageLockRenewalOptions()
-        {
-            EnableMessageLockAutoRenewal =
-                config.EnableMessageLockAutoRenewal ?? Defaults.ServiceBus.ENABLE_MESSAGE_LOCK_AUTO_RENEWAL,
-            MessageLockRenewalPreemptiveThresholdInSeconds =
-                config.MessageLockRenewalPreemptiveThresholdInSeconds
-                ?? Defaults.ServiceBus.MESSAGE_LOCK_RENEWAL_PREEMPTIVE_THRESHOLD_IN_SECONDS,
-            MaxAutoLockRenewalDuration = 
-                config.MaxAutoLockRenewalDuration ?? Defaults.ServiceBus.MAX_AUTO_LOCK_RENEWAL_DURATION
         };
     }
 }

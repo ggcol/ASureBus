@@ -85,7 +85,6 @@ public static class MinimalSetup
 
             var internalConfig = new InternalServiceBusConfig(settings);
             AsbConfiguration.ServiceBus = internalConfig;
-            AsbConfiguration.MessageLockOptions = internalConfig.MessageLockOptions;
         });
     }
 
@@ -96,7 +95,6 @@ public static class MinimalSetup
 
         var internalConfig = new InternalServiceBusConfig(serviceBusConfig);
         AsbConfiguration.ServiceBus = internalConfig;
-        AsbConfiguration.MessageLockOptions = internalConfig.MessageLockOptions;
     }
 
     private static void LoadSettings(Action<ServiceBusOptions> options)
@@ -109,7 +107,6 @@ public static class MinimalSetup
 
         var internalConfig = new InternalServiceBusConfig(opt);
         AsbConfiguration.ServiceBus = internalConfig;
-        AsbConfiguration.MessageLockOptions = internalConfig.MessageLockOptions;
     }
 
     private static IHostBuilder UseAsb(IHostBuilder hostBuilder, bool isSendOnly = false)

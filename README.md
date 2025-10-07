@@ -200,8 +200,6 @@ The following table summarizes the properties of `ServiceBusConfig` (which imple
 | MaxDelayInSeconds      | Maximum delay between retries.                      | 60              |
 | TryTimeoutInSeconds    | Timeout for each try (seconds).                     | 300             |
 | ServiceBusRetryMode    | fixed or exponential.                               | fixed           |
-| MaxConcurrentCalls     | Maximum concurrent message handlers.                | 20              |
-| MaxAutoLockRenewalDuration | Maximum duration to auto-renew message locks.       | 5 minutes       |
 
 These values configure the ServiceBusClientOptions and the concurrency of the message processors. They are used internally by the AzureServiceBusService when it creates queue and topic processors.
 
@@ -246,23 +244,11 @@ Both providers work together with the in‑memory cache (AsbCache) to speed up s
 
 ### 3.5 Message lock auto‑renewal
 Azure Service Bus locks a message for a short period (typically 30 seconds) when it is received. If your handler or saga takes longer than this to process the message, the lock can expire and the message becomes visible to other consumers, potentially leading to duplicate processing. ASureBus can automatically renew the message lock just before it expires.
-The auto‑renewal feature is disabled by default to avoid unnecessary network calls. To enable it, set the `EnableMessageLockAutoRenewal` property on your service bus configuration or call the `.ConfigureMessageLockHandling()` extension method. You can also set the `MessageLockRenewalPreemptiveThresholdInSeconds` to control how many seconds before the lock expiry the renewal should occur. The default threshold is 10 seconds.
+The auto‑renewal feature is disabled by default to avoid unnecessary network calls. To enable it call the `.ConfigureMessageLockHandling()` extension method. You can also set the `MessageLockRenewalPreemptiveThresholdInSeconds` to control how many seconds before the lock expiry the renewal should occur. The default threshold is 10 seconds.
 
 You can also set the `MaxAutoLockRenewalDuration` property to control the maximum total time (in seconds) that ASureBus will attempt to auto-renew the lock for a message. The default is 5 minutes (which is also Azure Service Bus default). If message processing exceeds this duration, the lock will not be renewed further and the message may become visible to other consumers.
 
 ```csharp
-// enabling lock auto‑renewal via ServiceBusConfig
-await Host.CreateDefaultBuilder()
-    .UseAsb(new ServiceBusConfig
-    {
-        ConnectionString = "<connection-string>",
-        EnableMessageLockAutoRenewal = true,
-        MessageLockRenewalPreemptiveThresholdInSeconds = 5,
-        MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(10) 
-    })
-    .RunConsoleAsync();
-
-// enabling lock auto‑renewal via ConfigureMessageLockHandling
 await Host.CreateDefaultBuilder()
     .UseAsb()
     .ConfigureMessageLockHandling(opt =>
@@ -379,13 +365,12 @@ By following the patterns described above, developers can build robust, event‑
 ### Weaknesses
 - Single transport – ASureBus only supports Azure Service Bus. Other frameworks (e.g., NServiceBus, MassTransit, ReBus) support multiple brokers, making them more flexible. <br> This is intended so far => *Not actively worked.*
 - Reflection‑based wiring – handler and saga discovery and saga handlers invocation rely on reflection, deferring certain errors to runtime and adding a small overhead. <br> Keep in mind for huge solutions/projects. => *Not actively worked.*
-- Limited customization – there are few hooks for custom serialization, outbox patterns, advanced error handling or per‑queue policies <br>*Actively worked* 
+- Limited customization – there are few hooks for custom serialization, outbox patterns, advanced error handling or per‑queue policies => *Actively worked.*
 
 ### Common constraints and worries
 - Message size limits – Azure Service Bus imposes a limit on message size; use `Heavy<T>` to off‑load large payloads. Failing to enable heavy property support will result in exceptions when sending large messages.
 - In‑memory cache persistence – without configuring saga persistence the state lives only in memory; restarting the service will lose all saga data.
 - Correlation misuse – calling `Bind()` within a saga or handler will override the correlation id, decoupling messages from the current saga and potentially starting new instances. Reserve `Bind()` for external contexts.
-- Global state – since configuration and caches are static, misconfiguration in one test or service could affect others when running in the same process.
 
 ## 11. Playground Samples
 The Playground project provides a rich set of samples demonstrating usage of ASureBus features. Each sample is self-contained and focuses on a specific pattern or capability. You can find these samples in the `/Playground/Samples/` directory:

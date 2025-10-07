@@ -59,10 +59,6 @@ await Host
     //     MaxDelayInSeconds = 0, // Default is 60
     //     TryTimeoutInSeconds = 0, // Default is 300
     //     ServiceBusRetryMode = "", // Default is "Fixed"
-    //     MaxConcurrentCalls = 5, // Default is 20
-    //     EnableMessageLockAutoRenewal = false, // Default is false
-    //     MessageLockRenewalPreemptiveThresholdInSeconds = 20, // Default is 10
-    //     MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(20) // Default is 5 minutes
     // })
     
     // Configure the application to use Azure Service Bus using delegate
@@ -70,16 +66,12 @@ await Host
     {
         opt.ConnectionString = "connection-string";
         // All the following are optional, they are initialized as default if not mentioned
-        opt.TransportType = ""; // Default is "AmqpWebSocket"
-        opt.MaxRetries = 0; // Default is 3
-        opt.DelayInSeconds = 0; // Default is 0.8
-        opt.MaxDelayInSeconds = 0; // Default is 60
-        opt.TryTimeoutInSeconds = 0; // Default is 300
-        opt.ServiceBusRetryMode = ""; // Default is "Fixed"
-        opt.MaxConcurrentCalls = 5; // Default is 20
-        opt.EnableMessageLockAutoRenewal = false; // Default is false
-        opt.MessageLockRenewalPreemptiveThresholdInSeconds = 20; // Default is 10
-        opt.MaxAutoLockRenewalDuration = TimeSpan.FromMinutes(20); // Default is 5 minutes
+        // opt.TransportType = ""; // Default is "AmqpWebSocket"
+        // opt.MaxRetries = 0; // Default is 3
+        // opt.DelayInSeconds = 0; // Default is 0.8
+        // opt.MaxDelayInSeconds = 0; // Default is 60
+        // opt.TryTimeoutInSeconds = 0; // Default is 300
+        // opt.ServiceBusRetryMode = ""; // Default is "Fixed"
     })
     
     

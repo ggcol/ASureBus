@@ -4,5 +4,5 @@ namespace ASureBus.Core.MessageProcessing.LockHandling;
 
 internal interface IMessageLockObserver
 {
-    void RenewOnExpiration(ProcessMessageEventArgs args);
+    internal void RenewOnExpiration(ProcessMessageEventArgs args);
 }
