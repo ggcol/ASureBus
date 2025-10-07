@@ -25,4 +25,7 @@ internal static class AsbConfiguration
     public static bool EnableMessageLockAutoRenewal
         => MessageLockOptions.EnableMessageLockAutoRenewal.HasValue
            && MessageLockOptions.EnableMessageLockAutoRenewal.Value;
+    
+    // message concurrency configuration
+    public static int MaxConcurrentCalls { get; set; } = Defaults.ServiceBus.MAX_CONCURRENT_CALLS;
 }

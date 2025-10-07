@@ -90,7 +90,6 @@ public class MinimalSetupTests
         var serviceBusConfig = new ServiceBusConfig
         {
             ConnectionString = "TestConnectionString",
-            MaxConcurrentCalls = 10
         };
 
         _mockHostBuilder.Setup(h =>

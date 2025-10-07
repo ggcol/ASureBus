@@ -24,7 +24,7 @@ public static class Configurations
         var opt = new MaxConcurrentCallsOptions();
         maxConcurrentCalls(opt);
 
-        AsbConfiguration.ServiceBus.MaxConcurrentCalls = opt.MaxConcurrentCalls;
+        AsbConfiguration.MaxConcurrentCalls = opt.MaxConcurrentCalls;
         return hostBuilder;
     }
     

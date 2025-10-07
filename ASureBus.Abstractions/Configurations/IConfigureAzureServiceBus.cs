@@ -34,7 +34,6 @@ public interface IConfigureAzureServiceBus
     /// Maps to Azure.Messaging.ServiceBus.ServiceBusRetryMode.
     /// </summary>
     public string? ServiceBusRetryMode { get; set; }
-    public int? MaxConcurrentCalls { get; set; } 
     public bool? EnableMessageLockAutoRenewal { get; set; }
     public int? MessageLockRenewalPreemptiveThresholdInSeconds { get; set; }
     public TimeSpan? MaxAutoLockRenewalDuration { get; set; }

@@ -17,7 +17,7 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
     
     private ServiceBusProcessorOptions _processorOptions { get; } = new()
     {
-        MaxConcurrentCalls = AsbConfiguration.ServiceBus.MaxConcurrentCalls,
+        MaxConcurrentCalls = AsbConfiguration.MaxConcurrentCalls,
         MaxAutoLockRenewalDuration = AsbConfiguration.MessageLockOptions.MaxAutoLockRenewalDuration,
     };
 

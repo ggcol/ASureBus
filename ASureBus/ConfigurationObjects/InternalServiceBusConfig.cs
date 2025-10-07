@@ -8,7 +8,6 @@ internal sealed class InternalServiceBusConfig
 {
     public string ConnectionString { get; }
     public ServiceBusClientOptions ClientOptions { get; set; }
-    public int MaxConcurrentCalls { get; set; }
     public MessageLockRenewalOptions MessageLockOptions { get; set; }
 
     public InternalServiceBusConfig(IConfigureAzureServiceBus config)
@@ -44,7 +43,6 @@ internal sealed class InternalServiceBusConfig
                     : Defaults.ServiceBus.CLIENT_OPTIONS.RetryOptions.TryTimeout
             }
         };
-        MaxConcurrentCalls = config.MaxConcurrentCalls ?? Defaults.ServiceBus.MAX_CONCURRENT_CALLS;
 
         MessageLockOptions = new MessageLockRenewalOptions()
         {
