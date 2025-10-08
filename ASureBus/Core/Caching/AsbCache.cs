@@ -1,11 +1,11 @@
-﻿using ASureBus.Core.Caching.Entities;
+﻿using System.Collections.Concurrent;
+using ASureBus.Core.Caching.Entities;
 
 namespace ASureBus.Core.Caching;
 
 internal sealed class AsbCache : IAsbCache
 {
-    private readonly IDictionary<object, ObservableCacheItem?> _shelf
-        = new Dictionary<object, ObservableCacheItem?>();
+    private readonly ConcurrentDictionary<object, ObservableCacheItem?> _shelf = new();
 
     public T? Set<T>(object key, T? obj, TimeSpan? expiresAfter = null)
     {
@@ -13,29 +13,24 @@ internal sealed class AsbCache : IAsbCache
 
         if (obs.HasExpiration)
         {
-            obs.Expired += (_, _) => { _shelf.Remove(obs.Key); };
+            obs.Expired += (_, _) => { _shelf.TryRemove(obs.Key, out _); };
         }
 
-        _shelf.Add(key, obs);
+        _shelf[key] = obs;
         return obj;
     }
 
-    public object? Set(object key, object? obj,
-        TimeSpan? expiresAfter = null)
+    public object? Set(object key, object? obj, TimeSpan? expiresAfter = null)
     {
         return Set<object>(key, obj, expiresAfter);
     }
 
     public T? Upsert<T>(object key, T? obj, TimeSpan? expiresAfter = null)
     {
-        if (_shelf.ContainsKey(key))
-        {
-            Remove(key);
-        }
-
+        _shelf.TryRemove(key, out _);
         return Set(key, obj, expiresAfter);
     }
-    
+
     public object? Upsert(object key, object? obj, TimeSpan? expiresAfter = null)
     {
         return Upsert<object>(key, obj, expiresAfter);
@@ -48,7 +43,7 @@ internal sealed class AsbCache : IAsbCache
         if (exists)
         {
             retrieved = (T?)obs?.CachedValue;
-            return exists;
+            return true;
         }
 
         retrieved = default;
@@ -62,6 +57,6 @@ internal sealed class AsbCache : IAsbCache
 
     public void Remove(object key)
     {
-        _shelf.Remove(key);
+        _shelf.TryRemove(key, out _);
     }
 }

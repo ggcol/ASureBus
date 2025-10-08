@@ -95,22 +95,6 @@ public class AsbCacheTests
     }
     
     [Test]
-    public void Set_GivenExistingKey_ThrowsArgumentException()
-    {
-        // Arrange
-        var key = Guid.NewGuid();
-        var obj1 = "FirstObject";
-        var obj2 = "SecondObject";
-        _cache.Set(key, obj1);
-
-        // Act
-        var duplicateKeySet = () => _cache.Set(key, obj2);
-        
-        //Assert
-        Assert.That(duplicateKeySet, Throws.ArgumentException);
-    }
-    
-    [Test]
     public void Set_GivenExpiration_TriggersExpirationEvent()
     {
         // Arrange
