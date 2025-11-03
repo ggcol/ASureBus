@@ -48,11 +48,6 @@ internal sealed class SagaMessagesProcessor(
             var asbMessage = await broker.Handle(args.Message.Body, args.CancellationToken)
                 .ConfigureAwait(false);
 
-            if (UsesHeavies(asbMessage))
-            {
-                await DeleteHeavies(asbMessage, args.CancellationToken).ConfigureAwait(false);
-            }
-
             await args.CompleteMessageAsync(args.Message, args.CancellationToken)
                 .ConfigureAwait(false);
 
@@ -95,7 +90,7 @@ internal sealed class SagaMessagesProcessor(
                     CorrelationId = correlationId
                 };
 
-            var maxRetriesMsg = "has reached max retries configured and will be dead-lettered";
+            const string maxRetriesMsg = "has reached max retries configured and will be dead-lettered";
 
             await DeadLetterMessage(args, ex, correlationId, listenerType.MessageType.Type, maxRetriesMsg)
                 .ConfigureAwait(false);
