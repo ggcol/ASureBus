@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
@@ -15,6 +16,7 @@ public abstract class ObservableExpirable
         if (_expiresAfter is not null) SetTimer();
     }
 
+    [JsonIgnore]
     public bool HasExpiration => _expiresAfter is not null;
 
     private void SetTimer()

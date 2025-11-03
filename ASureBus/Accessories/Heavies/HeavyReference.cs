@@ -2,6 +2,6 @@
 
 internal class HeavyReference
 {
-    internal required string PropertyName { get; set; }
-    internal Guid Ref { get; set; }
+    public required string PropertyName { get; set; }
+    public Guid Ref { get; set; }
 }

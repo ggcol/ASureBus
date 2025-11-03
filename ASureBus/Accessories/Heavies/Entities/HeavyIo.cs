@@ -42,10 +42,11 @@ internal static class HeavyIo
 
         foreach (var heavyProp in heavyProps)
         {
-            var heavy = heavyProp.GetValue(message) as Heavy;
+            var value = heavyProp.GetValue(message);
+            var heavy = value as Heavy;
             var heavyId = heavy!.Ref;
 
-            await _storage.Save(heavy,
+            await _storage.Save(value,
                     AsbConfiguration.HeavyProps?.Container!,
                     GetBlobName(messageId, heavyId),
                     false,
