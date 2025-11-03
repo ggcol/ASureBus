@@ -1,5 +1,6 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
 using ASureBus.ConfigurationObjects.Options;
@@ -70,6 +71,7 @@ public static class HeavyPropertiesSetup
     private static void ConfigureStorage()
     {
         HeavyIo.ConfigureStorage(
-            new AzureDataStorageService(AsbConfiguration.HeavyProps!.ConnectionString));
+            new AzureDataStorageService(AsbConfiguration.HeavyProps!.ConnectionString),
+            new ExpirableHeaviesObserver());
     }
 }

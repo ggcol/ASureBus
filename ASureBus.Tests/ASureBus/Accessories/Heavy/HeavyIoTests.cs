@@ -1,5 +1,6 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core;
 using ASureBus.Services.StorageAccount;
@@ -11,11 +12,13 @@ namespace ASureBus.Tests.ASureBus.Accessories.Heavy;
 public class HeavyIoTests
 {
     private Mock<IAzureDataStorageService> _storageMock;
+    private Mock<IExpirableHeaviesObserver> _expirableHeaviesObserverMock;
 
     [SetUp]
     public void SetUp()
     {
         _storageMock = new Mock<IAzureDataStorageService>();
+        _expirableHeaviesObserverMock = new Mock<IExpirableHeaviesObserver>();
 
         AsbConfiguration.HeavyProps = new HeavyPropertiesConfig
         {
@@ -23,14 +26,14 @@ public class HeavyIoTests
             Container = "test-container"
         };
 
-        HeavyIo.ConfigureStorage(_storageMock.Object);
+        HeavyIo.ConfigureStorage(_storageMock.Object, _expirableHeaviesObserverMock.Object);
     }
 
     [TearDown]
     public void TearDown()
     {
         AsbConfiguration.HeavyProps = null;
-        HeavyIo.ConfigureStorage(null);
+        HeavyIo.ConfigureStorage(null, null);
     }
 
     [Test]
@@ -160,7 +163,7 @@ public class HeavyIoTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await HeavyIo.Delete(messageId, heavyRef);
+        await HeavyIo.Delete(messageId, heavyRef.Ref);
 
         // Assert
         _storageMock.Verify(

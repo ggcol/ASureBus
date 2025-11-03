@@ -1,6 +1,7 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
 using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Entities;
 using ASureBus.Core.TypesHandling;
 
@@ -37,7 +38,7 @@ internal abstract class CollectMessage : ICollectMessage
     {
         return HeavyIo.IsHeavyConfigured()
             ? await HeavyIo.Unload(message, messageId, cancellationToken).ConfigureAwait(false)
-            : Array.Empty<HeavyReference>();
+            : [];
     }
 
     private AsbMessage<TMessage> ToInternalMessage<TMessage>(TMessage message, Guid messageId,

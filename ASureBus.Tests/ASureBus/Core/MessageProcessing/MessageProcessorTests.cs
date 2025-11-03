@@ -15,11 +15,6 @@ internal class TestProcessor(ILogger logger) : MessageProcessor(logger)
     {
         return await base.GetMessageHeader(messageBody, cancellationToken).ConfigureAwait(false);
     }
-
-    public new bool UsesHeavies(IAsbMessage asbMessage)
-    {
-        return base.UsesHeavies(asbMessage);
-    }
 }
 
 internal record MockMessage : IAmAMessage;
@@ -64,93 +59,14 @@ public class MessageProcessorTests
     }
 
     [Test]
-    public void UseHeavies_ReturnsFalse_WhenHeaviesAreConfiguredButNoHeaviesInMessage()
+    public void IsMaxDeliveryCountExceeded_ReturnsTrue_WhenActualCountExceedsMaxRetries()
     {
         // Arrange
-        AsbConfiguration.HeavyProps = new HeavyPropertiesConfig()
-        {
-            ConnectionString = "",
-            Container = ""
-        };
-
-        var asbMessage = new AsbMessage<MockMessage>()
-        {
-            Message = new MockMessage(),
-            Header = new AsbMessageHeader()
-            {
-                CorrelationId = It.IsAny<Guid>(),
-                MessageId = It.IsAny<Guid>(),
-                Destination = It.IsAny<string>(),
-                MessageName = It.IsAny<string>(),
-                IsCommand = It.IsAny<bool>(),
-            }
-        };
-        
-        // Act
-        var result = _processor.UsesHeavies(asbMessage);
-
-        // Assert
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void UseHeavies_ReturnsFalse_WhenHeaviesAreNotConfigured()
-    {
-        // Arrange
-        AsbConfiguration.HeavyProps = null;
-
-        var asbMessage = new AsbMessage<MockMessage>()
-        {
-            Message = new MockMessage(),
-            Header = new AsbMessageHeader()
-            {
-                CorrelationId = It.IsAny<Guid>(),
-                MessageId = It.IsAny<Guid>(),
-                Destination = It.IsAny<string>(),
-                MessageName = It.IsAny<string>(),
-                IsCommand = It.IsAny<bool>(),
-                Heavies = [],
-            }
-        };
+        var maxRetries = AsbConfiguration.ServiceBus.ClientOptions.RetryOptions.MaxRetries;
+        var actualCount = maxRetries + 1;
 
         // Act
-        var result = _processor.UsesHeavies(asbMessage);
-
-        // Assert
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void UseHeavies_ReturnsTrue_WhenHeaviesAreConfiguredAndMessageHasAtLeastOne()
-    {
-        // Arrange
-        AsbConfiguration.HeavyProps = new HeavyPropertiesConfig()
-        {
-            ConnectionString = "",
-            Container = ""
-        };;
-
-        var asbMessage = new AsbMessage<MockMessage>()
-        {
-            Message = new MockMessage(),
-            Header = new AsbMessageHeader()
-            {
-                CorrelationId = It.IsAny<Guid>(),
-                MessageId = It.IsAny<Guid>(),
-                Destination = It.IsAny<string>(),
-                MessageName = It.IsAny<string>(),
-                IsCommand = It.IsAny<bool>(),
-                Heavies =
-                [
-                    new()
-                    {
-                    }
-                ],
-            }
-        };
-
-        // Act
-        var result = _processor.UsesHeavies(asbMessage);
+        var result = MessageProcessor.IsMaxDeliveryCountExceeded(actualCount);
 
         // Assert
         Assert.That(result, Is.True);

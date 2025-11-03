@@ -1,5 +1,5 @@
 ﻿using ASureBus.Abstractions;
-using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Entities;
 using ASureBus.Core.Messaging;
 using ASureBus.Utils;

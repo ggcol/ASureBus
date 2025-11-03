@@ -1,4 +1,3 @@
-using ASureBus.Accessories.Heavies;
 using ASureBus.Core.Entities;
 using ASureBus.Utils;
 using Azure.Messaging.ServiceBus;
@@ -18,24 +17,7 @@ internal abstract class MessageProcessor(ILogger logger)
         return des?.Header;
     }
 
-    protected bool UsesHeavies(IAsbMessage asbMessage)
-    {
-        return HeavyIo.IsHeavyConfigured()
-               && asbMessage.Header.Heavies is not null
-               && asbMessage.Header.Heavies.Any();
-    }
-
-    protected static async Task DeleteHeavies(IAsbMessage asbMessage,
-        CancellationToken cancellationToken)
-    {
-        foreach (var heavyRef in asbMessage.Header.Heavies!)
-        {
-            await HeavyIo.Delete(asbMessage.Header.MessageId, heavyRef, cancellationToken)
-                .ConfigureAwait(false);
-        }
-    }
-
-    protected static bool IsMaxDeliveryCountExceeded(int actualCount)
+    internal static bool IsMaxDeliveryCountExceeded(int actualCount)
     {
         return actualCount >= AsbConfiguration.ServiceBus.ClientOptions.RetryOptions.MaxRetries;
     }

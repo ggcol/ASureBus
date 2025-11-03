@@ -3,15 +3,19 @@ using ASureBus.Abstractions;
 using ASureBus.Core;
 using ASureBus.Services.StorageAccount;
 
-namespace ASureBus.Accessories.Heavies;
+namespace ASureBus.Accessories.Heavies.Entities;
 
 internal static class HeavyIo
 {
     private static IAzureDataStorageService _storage = null!;
+    private static IExpirableHeaviesObserver _expirableHeaviesObserver = null!;
 
-    internal static void ConfigureStorage(IAzureDataStorageService storage)
+    internal static void ConfigureStorage(
+        IAzureDataStorageService storage,
+        IExpirableHeaviesObserver expirableHeaviesObserver)
     {
         _storage = storage;
+        _expirableHeaviesObserver = expirableHeaviesObserver;
     }
 
     public static bool IsHeavyConfigured()
@@ -38,8 +42,8 @@ internal static class HeavyIo
 
         foreach (var heavyProp in heavyProps)
         {
-            var heavy = heavyProp.GetValue(message);
-            var heavyId = (heavy as Heavy)!.Ref;
+            var heavy = heavyProp.GetValue(message) as Heavy;
+            var heavyId = heavy!.Ref;
 
             await _storage.Save(heavy,
                     AsbConfiguration.HeavyProps?.Container!,
@@ -47,6 +51,11 @@ internal static class HeavyIo
                     false,
                     cancellationToken)
                 .ConfigureAwait(false);
+
+            if (heavy.HasExpiration)
+            {
+                _expirableHeaviesObserver.DeleteOnExpiration(heavy, messageId, cancellationToken);
+            }
 
             heavyProp.SetValue(message, null);
 
@@ -104,14 +113,14 @@ internal static class HeavyIo
         }
     }
 
-    public static async Task Delete(Guid messageId, HeavyReference heavyReference,
+    public static async Task Delete(Guid messageId, Guid heavyReference,
         CancellationToken cancellationToken = default)
     {
         GuardAgainstNotConfigured();
 
         await _storage.Delete(
                 AsbConfiguration.HeavyProps?.Container!,
-                GetBlobName(messageId, heavyReference.Ref),
+                GetBlobName(messageId, heavyReference),
                 cancellationToken)
             .ConfigureAwait(false);
     }
