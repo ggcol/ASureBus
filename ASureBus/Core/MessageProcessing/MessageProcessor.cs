@@ -1,4 +1,4 @@
-using ASureBus.Accessories.Heavy;
+using ASureBus.Accessories.Heavies;
 using ASureBus.Core.Entities;
 using ASureBus.Utils;
 using Azure.Messaging.ServiceBus;

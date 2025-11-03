@@ -1,4 +1,4 @@
-﻿using ASureBus.Core.Entities;
+﻿using ASureBus.Abstractions.Behaviours;
 
 namespace ASureBus.Core.Caching.Entities;
 

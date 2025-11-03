@@ -3,7 +3,7 @@ using ASureBus.Abstractions;
 using ASureBus.Core;
 using ASureBus.Services.StorageAccount;
 
-namespace ASureBus.Accessories.Heavy;
+namespace ASureBus.Accessories.Heavies;
 
 internal static class HeavyIo
 {
@@ -39,7 +39,7 @@ internal static class HeavyIo
         foreach (var heavyProp in heavyProps)
         {
             var heavy = heavyProp.GetValue(message);
-            var heavyId = (heavy as Abstractions.Heavy)!.Ref;
+            var heavyId = (heavy as Heavy)!.Ref;
 
             await _storage.Save(heavy,
                     AsbConfiguration.HeavyProps?.Container!,

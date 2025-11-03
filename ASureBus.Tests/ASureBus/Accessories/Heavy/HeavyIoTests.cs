@@ -1,5 +1,5 @@
 ﻿using ASureBus.Abstractions;
-using ASureBus.Accessories.Heavy;
+using ASureBus.Accessories.Heavies;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core;
 using ASureBus.Services.StorageAccount;

@@ -1,9 +1,9 @@
 using System.Timers;
 using Timer = System.Timers.Timer;
 
-namespace ASureBus.Core.Entities;
+namespace ASureBus.Abstractions.Behaviours;
 
-internal abstract class ObservableExpirable
+public abstract class ObservableExpirable
 {
     internal event EventHandler? Expired;
     private readonly TimeSpan? _expiresAfter;
@@ -12,11 +12,10 @@ internal abstract class ObservableExpirable
     protected ObservableExpirable(TimeSpan? expiresAfter)
     {
         _expiresAfter = expiresAfter;
-        if (_expiresAfter is not null)
-            SetTimer();
+        if (_expiresAfter is not null) SetTimer();
     }
 
-    internal bool HasExpiration => _expiresAfter is not null;
+    public bool HasExpiration => _expiresAfter is not null;
 
     private void SetTimer()
     {

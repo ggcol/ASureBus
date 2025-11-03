@@ -1,5 +1,4 @@
 ﻿using ASureBus.Abstractions.Configurations;
-using ASureBus.ConfigurationObjects.Options;
 using Azure.Messaging.ServiceBus;
 
 namespace ASureBus.ConfigurationObjects;

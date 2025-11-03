@@ -1,5 +1,5 @@
 ﻿using ASureBus.Abstractions.Configurations;
-using ASureBus.Accessories.Heavy;
+using ASureBus.Accessories.Heavies;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
 using ASureBus.ConfigurationObjects.Options;

@@ -1,6 +1,6 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
-using ASureBus.Accessories.Heavy;
+using ASureBus.Accessories.Heavies;
 using ASureBus.Core.Entities;
 using ASureBus.Core.TypesHandling;
 

@@ -1,16 +1,15 @@
-﻿namespace ASureBus.Abstractions;
+﻿using ASureBus.Abstractions.Behaviours;
 
-public abstract class Heavy
+namespace ASureBus.Abstractions;
+
+public abstract class Heavy(TimeSpan? expiresAfter) 
+    : ObservableExpirable(expiresAfter)
 {
     internal Guid Ref = Guid.NewGuid();
 }
 
-public class Heavy<T>() : Heavy
+public class Heavy<T>(T value, TimeSpan? expiresAfter = null) 
+    : Heavy(expiresAfter)
 {
-    public T? Value { get; set; } = default;
-
-    public Heavy(T value) : this()
-    {
-        Value = value;
-    }
+    public T? Value { get; } = value;
 }

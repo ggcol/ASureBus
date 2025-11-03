@@ -1,5 +1,4 @@
 ﻿using ASureBus.Abstractions;
-using ASureBus.Abstractions.Options.Messaging;
 using Microsoft.Extensions.Logging;
 using Playground.Samples._07_DelayedAndScheduled.Messages;
 

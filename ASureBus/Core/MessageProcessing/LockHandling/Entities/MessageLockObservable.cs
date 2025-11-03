@@ -1,4 +1,4 @@
-using ASureBus.Core.Entities;
+using ASureBus.Abstractions.Behaviours;
 using Azure.Messaging.ServiceBus;
 
 namespace ASureBus.Core.MessageProcessing.LockHandling.Entities;
