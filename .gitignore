@@ -402,3 +402,5 @@ appsettings.json
 qodana.yaml
 
 **/.DS_Store
+
+ASureBus.ThirdPartyTests/AutoMapper/License.txt

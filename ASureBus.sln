@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASureBus.Tests", "ASureBus.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASureBus.Abstractions", "ASureBus.Abstractions\ASureBus.Abstractions.csproj", "{5BE2A8BC-A3B4-47CE-923E-9D0948C5C5B1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASureBus.ThirdPartyTests", "ASureBus.ThirdPartyTests\ASureBus.ThirdPartyTests.csproj", "{67B11C8F-0F29-4F4A-B9D3-207031B9893B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{5BE2A8BC-A3B4-47CE-923E-9D0948C5C5B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BE2A8BC-A3B4-47CE-923E-9D0948C5C5B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BE2A8BC-A3B4-47CE-923E-9D0948C5C5B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67B11C8F-0F29-4F4A-B9D3-207031B9893B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67B11C8F-0F29-4F4A-B9D3-207031B9893B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67B11C8F-0F29-4F4A-B9D3-207031B9893B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67B11C8F-0F29-4F4A-B9D3-207031B9893B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
