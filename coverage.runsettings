@@ -7,6 +7,8 @@
           <Exclude>
             <ModulePath>.*Playground.dll</ModulePath>
             <ModulePath>.*ASureBus.Tests.dll</ModulePath>
+            <ModulePath>.*ASureBus.IntegrationTests.dll</ModulePath>
+            <ModulePath>.*ASureBus.ThirdPartyTests.dll</ModulePath>
           </Exclude>
         </Configuration>
       </DataCollector>
