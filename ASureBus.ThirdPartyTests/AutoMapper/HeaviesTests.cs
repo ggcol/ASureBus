@@ -55,7 +55,8 @@ public static class AutoMapperConfig
             .Setup(l => l.CreateLogger(It.IsAny<string>()))
             .Returns(logger.Object);
 
-        var license = File.ReadAllText(Path.Combine(".", "AutoMapper", "License.txt"));
+        var license = Environment.GetEnvironmentVariable("AutomapperLicense") ??
+            File.ReadAllText(Path.Combine(".", "AutoMapper", "License.txt"));
         
         return new MapperConfiguration(config =>
         {

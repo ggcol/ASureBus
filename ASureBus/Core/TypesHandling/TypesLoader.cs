@@ -18,13 +18,13 @@ internal sealed class TypesLoader : ITypesLoader
         .Select(x => x.MessageType.Type)
         .ToHashSet();
 
-    public TypesLoader()
+    public TypesLoader(Assembly assembly)
     {
-        var assembly = Assembly.GetEntryAssembly();
+        // var assembly = Assembly.GetEntryAssembly();
         Sagas = GetSagas(assembly).ToHashSet();
         Handlers = GetHandlers(assembly).ToHashSet();
     }
-
+    
     private IEnumerable<HandlerType> GetHandlers(Assembly? assembly)
     {
         if (assembly is null) return Array.Empty<HandlerType>();

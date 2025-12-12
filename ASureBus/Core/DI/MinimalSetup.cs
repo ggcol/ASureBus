@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with ASureBus. If not, see <https://www.gnu.org/licenses/>.
 
+using System.Reflection;
 using ASureBus.Abstractions;
 using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects;
@@ -69,7 +70,15 @@ public static class MinimalSetup
         LoadSettings(options);
         return UseAsb(hostBuilder);
     }
-    
+
+    //TODO extend to public API
+    internal static IHostBuilder UseAsb(this IHostBuilder hostBuilder, Action<ServiceBusOptions> options,
+        Assembly assemblyToScan)
+    {
+        LoadSettings(options);
+        return UseAsb(hostBuilder, assemblyToScan: assemblyToScan);
+    }
+
     public static IHostBuilder UseSendOnlyAsb(this IHostBuilder hostBuilder, Action<ServiceBusOptions> options)
     {
         LoadSettings(options);
@@ -101,7 +110,7 @@ public static class MinimalSetup
     {
         var opt = new ServiceBusOptions();
         options(opt);
-        
+
         if (string.IsNullOrWhiteSpace(opt.ConnectionString))
             throw new ConfigurationNullException(nameof(ServiceBusOptions.ConnectionString));
 
@@ -109,7 +118,8 @@ public static class MinimalSetup
         AsbConfiguration.ServiceBus = internalConfig;
     }
 
-    private static IHostBuilder UseAsb(IHostBuilder hostBuilder, bool isSendOnly = false)
+    private static IHostBuilder UseAsb(IHostBuilder hostBuilder, bool isSendOnly = false,
+        Assembly? assemblyToScan = null)
     {
         return hostBuilder
             .ConfigureServices((_, services) =>
@@ -120,7 +130,6 @@ public static class MinimalSetup
                  */
                 services
                     .AddSingleton<IAsbCache, AsbCache>()
-                    .AddSingleton<ITypesLoader, TypesLoader>()
                     .AddSingleton<IAzureServiceBusService, AzureServiceBusService>()
                     .AddSingleton<ISagaFactory, SagaFactory>()
                     .AddSingleton<IMessagingContext, MessagingContext>()
@@ -129,7 +138,10 @@ public static class MinimalSetup
                     .AddSingleton<IProcessSagaMessages, SagaMessagesProcessor>()
                     .AddSingleton<IProcessHandlerMessages, HandlerMessagesProcessor>()
                     .AddSingleton<IMessageLockObserver, MessageLockObserver>();
-                
+
+                assemblyToScan ??= Assembly.GetEntryAssembly();
+
+                services.AddSingleton<ITypesLoader, TypesLoader>(sp => new TypesLoader(assemblyToScan!));
 
                 if (!isSendOnly)
                 {

@@ -54,7 +54,9 @@ jobs:
       - name: Run tests
         env:
           ConnectionStrings__DefaultConnection: "Server=localhost,1433;Database=master;User Id=sa;Password=AMoreComplexPsw123!;Trusted_Connection=False;MultipleActiveResultSets=true;TrustServerCertificate=True;"
-        run: dotnet test ./ASureBus.Tests/ --configuration Release --no-build --verbosity normal
+          ServiceBusConnectionString: ${{ secrets.INTEGRATION_TESTS_SERVICE_BUS_CONNECTION_STRING }}
+          AutomapperLicense: ${{ secrets.INTEGRATION_TESTS_AUTOMAPPER_LICENSE }}
+        run: dotnet test --configuration Release --no-build --verbosity normal
 
       - name: Get the latest tag
         id: get_tag

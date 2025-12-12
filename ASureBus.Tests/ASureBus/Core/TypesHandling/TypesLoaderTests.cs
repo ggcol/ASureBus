@@ -16,14 +16,14 @@ public class TypesLoaderTests
     public void SetUp()
     {
         _mockAssembly = new Mock<Assembly>();
-        _loader = new TypesLoader();
+        _loader = new TypesLoader(_mockAssembly.Object);
     }
 
     [Test]
     public void Constructor_WhenCalled_InitializesHandlersAndSagas()
     {
         // Act
-        var loader = new TypesLoader();
+        var loader = new TypesLoader(_mockAssembly.Object);
 
         // Assert
         Assert.Multiple(() =>
