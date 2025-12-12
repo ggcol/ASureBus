@@ -47,7 +47,7 @@ internal abstract class CollectMessage : ICollectMessage
     {
         var asbMessage = new AsbMessage<TMessage>
         {
-            Header = new AsbMessageHeader()
+            Header = new AsbMessageHeader
             {
                 MessageId = messageId,
                 MessageName = typeof(TMessage).Name,

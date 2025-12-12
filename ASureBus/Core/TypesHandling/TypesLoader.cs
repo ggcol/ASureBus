@@ -20,7 +20,6 @@ internal sealed class TypesLoader : ITypesLoader
 
     public TypesLoader(Assembly assembly)
     {
-        // var assembly = Assembly.GetEntryAssembly();
         Sagas = GetSagas(assembly).ToHashSet();
         Handlers = GetHandlers(assembly).ToHashSet();
     }

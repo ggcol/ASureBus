@@ -71,7 +71,7 @@ internal sealed class SagaFactory(
 
     private Task HandleCompletion(ISaga saga, SagaType sagaType, CancellationToken cancellationToken)
     {
-        saga.Completed += async (sender, args) =>
+        saga.Completed += async (_, args) =>
         {
             cache.Remove(args.CorrelationId);
             await sagaIo.Delete(args.CorrelationId, sagaType, cancellationToken).ConfigureAwait(false);

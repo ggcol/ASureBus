@@ -84,7 +84,7 @@ internal sealed class SagaMessagesProcessor(
              * and the correlation id
              */
             if (!IsMaxDeliveryCountExceeded(args.Message.DeliveryCount))
-                throw new AsbException()
+                throw new AsbException
                 {
                     OriginalException = ex,
                     CorrelationId = correlationId
