@@ -9,6 +9,7 @@ using ASureBus.Utils;
 namespace ASureBus.Tests.ASureBus.Services.SqlServer;
 
 [TestFixture]
+[Platform("Win")]
 public class SqlServerServiceTests
 {
     private SqlServerService _service;
