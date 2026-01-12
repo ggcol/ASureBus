@@ -36,7 +36,10 @@ internal static class Serializer
 
     internal static string Serialize<TItem>(TItem item)
     {
-        return JsonSerializer.Serialize(item);
+        return JsonSerializer.Serialize(item, new JsonSerializerOptions()
+        {
+            IncludeFields = true
+        });
     }
 
     internal static void Serialize(Utf8JsonWriter writer, object? value,
