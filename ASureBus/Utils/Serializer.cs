@@ -47,7 +47,6 @@ internal static class Serializer
     internal static void Serialize(Utf8JsonWriter writer, object? value,
         Type inputType, JsonSerializerOptions? options = null)
     {
-        if (options is not null) options.IncludeFields = true;
         JsonSerializer.Serialize(writer, value, inputType, options ?? _jsonSerializerOptions);
     }
 }
