@@ -10,6 +10,7 @@ namespace ASureBus.IntegrationTests.TestConfigurations;
 public class WithAsbHostAndCheckService
 {
     private readonly IHost _host;
+    private bool _isDisposed;
     protected IMessagingContext Context => Get.ServiceFromHost<IMessagingContext>(_host);
     protected CheckService CheckService => Get.ServiceFromHost<CheckService>(_host);
 
@@ -42,6 +43,10 @@ public class WithAsbHostAndCheckService
 
     protected async Task StopHost()
     {
+        if (_isDisposed) return;
+        
+        _isDisposed = true;
         await _host.StopAsync().ConfigureAwait(false);
+        _host.Dispose();
     }
 }

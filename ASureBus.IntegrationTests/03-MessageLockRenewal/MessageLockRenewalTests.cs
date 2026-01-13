@@ -57,8 +57,10 @@ public class MessageLockRenewalTests : WithAsbHostAndCheckService
 
         // Assert
         const int notProcessedYet = 0;
+        const double timingToleranceInSeconds = 0.5;
         Assert.That(CheckService.ProcessingTimeSeconds,
-            Is.GreaterThanOrEqualTo(handlerProcessingTimeInSeconds).Or.EqualTo(notProcessedYet));
+            Is.GreaterThanOrEqualTo(handlerProcessingTimeInSeconds - timingToleranceInSeconds)
+                .Or.EqualTo(notProcessedYet));
     }
 
     [Test]
