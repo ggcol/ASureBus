@@ -5,7 +5,7 @@ abstractions and helper classes for sending and receiving commands, events and t
 classes or sagas, caching ASB resources, off‑loading heavy properties to Azure Blob Storage, and persisting long‑running
 workflows.
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/rsb/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/ASureBus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/ASureBus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)[![Codacy Badge](https://app.codacy.com/project/badge/Coverage/e75f90253491454cbf0dfb25c9c7085b)](https://app.codacy.com/gh/ggcol/ASureBus/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage)
 
 [![NuGet version (ASureBus)](https://img.shields.io/nuget/v/ASureBus.svg?style=flat-square)](https://www.nuget.org/packages/ASureBus/)
 ASureBus
