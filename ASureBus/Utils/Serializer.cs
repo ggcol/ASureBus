@@ -26,7 +26,7 @@ internal static class Serializer
     }
 
     internal static async Task<TReturn?> Deserialize<TReturn>(Stream utf8Json,
-        JsonSerializerOptions options = null,
+        JsonSerializerOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         return await JsonSerializer
@@ -47,6 +47,7 @@ internal static class Serializer
     internal static void Serialize(Utf8JsonWriter writer, object? value,
         Type inputType, JsonSerializerOptions? options = null)
     {
-        JsonSerializer.Serialize(writer, value, inputType, options);
+        if (options is not null) options.IncludeFields = true;
+        JsonSerializer.Serialize(writer, value, inputType, options ?? _jsonSerializerOptions);
     }
 }
