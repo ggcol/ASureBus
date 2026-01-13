@@ -51,10 +51,16 @@ jobs:
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
-          COBERTURA_FILE=$(find . -name coverage.cobertura.xml)
-          if [ -z "$COBERTURA_FILE" ]; then
-              echo "Coverage report not found!"
+          COBERTURA_FILES=$(find ./coverage -name coverage.cobertura.xml)
+          if [ -z "$COBERTURA_FILES" ]; then
+              echo "Coverage reports not found!"
               exit 1
           fi
-          echo "Found coverage file at: ${COBERTURA_FILE}"
-          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r $COBERTURA_FILE
+          echo "Found coverage files:"
+          echo "$COBERTURA_FILES"
+          for file in $COBERTURA_FILES; do
+              echo "Uploading: $file"
+              bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r "$file"
+          done
+          echo "Notifying Codacy that all reports have been uploaded"
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) final

@@ -107,13 +107,27 @@ internal sealed class AsbWorker : IHostedService
     {
         foreach (var processor in _processors.Values)
         {
-            await processor
-                .StopProcessingAsync(cancellationToken)
-                .ConfigureAwait(false);
+            try
+            {
+                await processor
+                    .StopProcessingAsync(cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Processor already disposed during shutdown
+            }
 
-            await processor
-                .DisposeAsync()
-                .ConfigureAwait(false);
+            try
+            {
+                await processor
+                    .DisposeAsync()
+                    .ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Processor already disposed
+            }
         }
 
         _hostApplicationLifetime.StopApplication();
