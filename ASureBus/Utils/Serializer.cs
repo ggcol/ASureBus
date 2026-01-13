@@ -5,6 +5,11 @@ namespace ASureBus.Utils;
 
 internal static class Serializer
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        IncludeFields = true
+    };
+
     internal static object? Deserialize(string read, Type type,
         JsonConverter converter)
     {
@@ -21,7 +26,7 @@ internal static class Serializer
     }
 
     internal static async Task<TReturn?> Deserialize<TReturn>(Stream utf8Json,
-        JsonSerializerOptions options = null,
+        JsonSerializerOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         return await JsonSerializer
@@ -36,12 +41,12 @@ internal static class Serializer
 
     internal static string Serialize<TItem>(TItem item)
     {
-        return JsonSerializer.Serialize(item);
+        return JsonSerializer.Serialize(item, _jsonSerializerOptions);
     }
 
     internal static void Serialize(Utf8JsonWriter writer, object? value,
         Type inputType, JsonSerializerOptions? options = null)
     {
-        JsonSerializer.Serialize(writer, value, inputType, options);
+        JsonSerializer.Serialize(writer, value, inputType, options ?? _jsonSerializerOptions);
     }
 }
