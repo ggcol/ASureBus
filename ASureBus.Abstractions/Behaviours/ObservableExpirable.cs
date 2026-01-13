@@ -6,18 +6,27 @@ namespace ASureBus.Abstractions.Behaviours;
 
 public abstract class ObservableExpirable
 {
-    internal event EventHandler? Expired;
     private readonly TimeSpan? _expiresAfter;
     private Timer? _timer;
 
+    internal event EventHandler? Expired;
+    
+    [JsonIgnore]
+    internal bool HasExpiration => _expiresAfter is not null;
+    [JsonIgnore]
+    internal DateTimeOffset? StartTime { get; }
+    
     protected ObservableExpirable(TimeSpan? expiresAfter)
     {
         _expiresAfter = expiresAfter;
-        if (_expiresAfter is not null) SetTimer();
+        if (HasExpiration) SetTimer();
+    }
+    
+    protected ObservableExpirable(TimeSpan? expiresAfter, DateTimeOffset startTime) : this(expiresAfter)
+    {
+        StartTime = startTime;
     }
 
-    [JsonIgnore]
-    public bool HasExpiration => _expiresAfter is not null;
 
     private void SetTimer()
     {
