@@ -5,6 +5,11 @@ namespace ASureBus.Utils;
 
 internal static class Serializer
 {
+    private static readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        IncludeFields = true
+    };
+
     internal static object? Deserialize(string read, Type type,
         JsonConverter converter)
     {
@@ -36,10 +41,7 @@ internal static class Serializer
 
     internal static string Serialize<TItem>(TItem item)
     {
-        return JsonSerializer.Serialize(item, new JsonSerializerOptions()
-        {
-            IncludeFields = true
-        });
+        return JsonSerializer.Serialize(item, _jsonSerializerOptions);
     }
 
     internal static void Serialize(Utf8JsonWriter writer, object? value,
