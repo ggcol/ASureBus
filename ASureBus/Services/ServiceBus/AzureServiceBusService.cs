@@ -14,7 +14,7 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
     private ServiceBusClient _sbClient { get; } = new(
         AsbConfiguration.ServiceBus.ConnectionString,
         AsbConfiguration.ServiceBus.ClientOptions);
-    
+
     private ServiceBusProcessorOptions _processorOptions { get; } = new()
     {
         MaxConcurrentCalls = AsbConfiguration.MaxConcurrentCalls,
@@ -27,7 +27,7 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
         if (handler.MessageType.IsCommand)
         {
             var queueName = QueueName.Resolve(handler.MessageType.Type);
-            
+
             var queue = await ConfigureQueue(queueName, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -38,8 +38,9 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
                 handler.MessageType.Type, cancellationToken)
             .ConfigureAwait(false);
 
-        return _sbClient.CreateProcessor(topicConfig.Name,
-            topicConfig.SubscriptionName, _processorOptions);
+        return AsbConfiguration.UseConsumerScopedQueueForTopics
+            ? _sbClient.CreateProcessor(topicConfig.QueueName, _processorOptions)
+            : _sbClient.CreateProcessor(topicConfig.Name, topicConfig.SubscriptionName, _processorOptions);
     }
 
     public async Task<string> ConfigureQueue(string queueName,
@@ -56,7 +57,7 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
             queueName = rx.Value.Name;
         }
 
-        return cache.Set(queueName, queueName, AsbConfiguration.Cache.Expiration);
+        return cache.Set(queueName, queueName, AsbConfiguration.Cache.Expiration)!;
     }
 
     public async Task<string> ConfigureTopicForSender(string topicName,
@@ -73,14 +74,14 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
             topicName = rx.Value.Name;
         }
 
-        return cache.Set(topicName, topicName, AsbConfiguration.Cache.Expiration);
+        return cache.Set(topicName, topicName, AsbConfiguration.Cache.Expiration)!;
     }
 
     private async Task<TopicConfiguration> ConfigureTopicForReceiver(
         Type messageType, CancellationToken cancellationToken = default)
     {
         var queueName = QueueName.Resolve(messageType);
-        
+
         var config = new TopicConfiguration(
             queueName,
             Assembly.GetEntryAssembly()?.GetName().Name);
@@ -88,26 +89,31 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
         var cacheKey = CacheKey(AsbConfiguration.Cache.TopicConfigPrefix,
             config.Name);
 
-        if (cache.TryGetValue(cacheKey, out TopicConfiguration cachedConfig))
-            return cachedConfig;
+        if (cache.TryGetValue(cacheKey, out TopicConfiguration cachedConfig)) return cachedConfig!;
 
         var admClient = MakeAdmClient();
 
         if (!await admClient.TopicExistsAsync(config.Name, cancellationToken))
         {
-            _ = await admClient.CreateTopicAsync(
-                config.Name, cancellationToken);
+            _ = await admClient.CreateTopicAsync(config.Name, cancellationToken).ConfigureAwait(false);
         }
 
-        if (!await admClient.SubscriptionExistsAsync(config.Name,
-                config.SubscriptionName, cancellationToken))
+        var opt = new CreateSubscriptionOptions(config.Name, config.SubscriptionName);
+        
+        if (AsbConfiguration.UseConsumerScopedQueueForTopics)
         {
-            _ = await admClient
-                .CreateSubscriptionAsync(config.Name, config.SubscriptionName,
-                    cancellationToken);
+            config.QueueName = QueueName.ForConsumerScopedTopicSubscription(config);
+
+            await ConfigureQueue(config.QueueName, cancellationToken).ConfigureAwait(false);
+            opt.ForwardTo = config.QueueName;
         }
 
-        return cache.Set(cacheKey, config, AsbConfiguration.Cache.Expiration);
+        if (!await admClient.SubscriptionExistsAsync(config.Name, config.SubscriptionName, cancellationToken))
+        {
+            _ = await admClient.CreateSubscriptionAsync(opt, cancellationToken).ConfigureAwait(false);
+        }
+
+        return cache.Set(cacheKey, config, AsbConfiguration.Cache.Expiration)!;
     }
 
     //TODO store? throwaway?
@@ -133,4 +139,7 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
     }
 }
 
-public sealed record TopicConfiguration(string Name, string SubscriptionName);
+internal sealed record TopicConfiguration(string Name, string SubscriptionName)
+{
+    internal string? QueueName { get; set; }
+}

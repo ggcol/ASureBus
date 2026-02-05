@@ -28,4 +28,5 @@ internal static class AsbConfiguration
     
     // message concurrency configuration
     public static int MaxConcurrentCalls { get; set; } = Defaults.ServiceBus.MAX_CONCURRENT_CALLS;
+    public static bool UseConsumerScopedQueueForTopics { get; set; } = Defaults.ServiceBus.USE_CONSUMER_SCOPED_QUEUE_FOR_TOPICS;
 }

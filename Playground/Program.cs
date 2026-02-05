@@ -33,6 +33,7 @@ using Playground.Samples._08_ABrokenSaga;
 using Playground.Samples._09_LongerSaga;
 using Playground.Samples._10_SagaWithTimeout;
 using Playground.Samples._11_SagaTimeoutTriggeredAfterCompleting;
+using Playground.Samples._13_UseConsumerScopedQueueForTopics;
 
 await Host
     .CreateDefaultBuilder()
@@ -105,6 +106,21 @@ await Host
     // .ConfigureServiceBusClientOptions(opt =>
     // {
     //     //se ms-doc for ServiceBusClientOptions
+    // })
+    
+    
+    // TOPIC: USE CONSUMER-SCOPED QUEUES FOR TOPICS
+    
+    /*
+     * Default is false, set to true to create a dedicated queue per consumer application instance.
+     * Use this option when you need each instance to receive and process messages independently,
+     * rather than sharing messages across a common topic.
+     * This is particularly useful in scenarios where message resubmission is required for each consumer,
+     * instead of distributing messages to all the topic subscribers.
+     */
+    // .ConfigureSubscriptionScopedQueues(opt =>
+    // {
+    //     opt.UseConsumerScopedQueueForTopics = true;
     // })
     
     
@@ -198,6 +214,7 @@ await Host
             // services.AddHostedService<SagaWithTimeoutInitJob>();
             // services.AddHostedService<SagaTimeoutTriggeredAfterCompletingInitJob>();
             // services.AddHostedService<GenericTypeMessagesInitJob>();
+            // services.AddHostedService<UseConsumerScopedQueueForTopicsInitJob>();
             
             services.AddLogging();
         })

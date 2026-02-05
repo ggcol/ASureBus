@@ -38,4 +38,15 @@ public static class Configurations
         AsbConfiguration.ServiceBus.ClientOptions = opt;
         return hostBuilder;
     }
+    
+    public static IHostBuilder ConfigureSubscriptionScopedQueues(
+        this IHostBuilder hostBuilder, 
+        Action<SubscriptionScopedQueuesOptions> subscriptionScopedQueuesOptions)
+    {
+        var opt = new SubscriptionScopedQueuesOptions();
+        subscriptionScopedQueuesOptions(opt);
+        
+        AsbConfiguration.UseConsumerScopedQueueForTopics = opt.UseConsumerScopedQueueForTopics;
+        return hostBuilder;
+    }
 }

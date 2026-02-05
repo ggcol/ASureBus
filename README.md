@@ -28,38 +28,69 @@ Only a connection string is required. You can supply the service bus settings vi
 `IConfigureAzureServiceBus` or by passing a configuration object directly. The most important property is the connection
 string; other properties (transport type, retry policy, delays, max concurrency) have sensible defaults.
 
-You can also configure additional features such as caching, heavy property off‑loading and saga persistence. Each has a
-fluent extension method and a corresponding options class:
+ASureBus supports three configuration patterns for all extension methods:
+
+1. **Generic type** – bind settings from configuration providers via a class implementing the appropriate interface.
+2. **Config object** – pass a configuration object directly.
+3. **Delegate (Action)** – configure options inline using a delegate.
 
 ```csharp
-await Host
-    .CreateDefaultBuilder()
+// Pattern 1: Generic type (binds from IConfiguration)
+await Host.CreateDefaultBuilder()
+    .UseAsb<MyServiceBusSettings>()
+    .RunConsoleAsync();
+
+// Pattern 2: Config object
+await Host.CreateDefaultBuilder()
     .UseAsb(new ServiceBusConfig
     {
         ConnectionString = "<connection-string>",
         TransportType = "AmqpWebSocket", // optional
         MaxRetries = 3                   // optional, defaults to 3
     })
-    .ConfigureAsbCache(new AsbCacheConfig
+    .RunConsoleAsync();
+
+// Pattern 3: Delegate (Action)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt =>
     {
-        Expiration = TimeSpan.FromMinutes(5),
-        TopicConfigPrefix = "topicConfig",
-        ServiceBusSenderCachePrefix = "sender"
+        opt.ConnectionString = "<connection-string>";
+        // All the following are optional
+        // opt.TransportType = "AmqpWebSocket";
+        // opt.MaxRetries = 3;
     })
-    .UseHeavyProps(new HeavyPropertiesConfig
+    .RunConsoleAsync();
+```
+
+You can also configure additional features such as caching, heavy property off‑loading and saga persistence. Each has a
+fluent extension method supporting the same three configuration patterns:
+
+```csharp
+await Host
+    .CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .ConfigureAsbCache(opt =>
     {
-        ConnectionString = "<storage-connection>",
-        Container = "heavies"
+        opt.Expiration = TimeSpan.FromMinutes(5);
+        opt.TopicConfigPrefix = "topicConfig";
+        opt.ServiceBusSenderCachePrefix = "sender";
     })
-    .UseSqlServerSagaPersistence(new SqlServerSagaPersistenceConfig
+    .UseHeavyProps(opt =>
     {
-        ConnectionString = "<sql-connection>"
+        opt.ConnectionString = "<storage-connection>";
+        opt.Container = "heavies";
+    })
+    .UseSqlServerSagaPersistence(opt =>
+    {
+        opt.ConnectionString = "<sql-connection>";
+        opt.Schema = "sagas"; // optional, defaults to "sagas"
     })
     .RunConsoleAsync();
 ```
 
 These extension methods register the necessary services for caching senders, off‑loading heavy properties and persisting
-sagas. See Configuration for detailed descriptions of each option.
+sagas. All configuration methods support the three patterns shown above (generic type, config object, delegate). See 
+Configuration for detailed descriptions of each option.
 
 ### 1.1 NuGet packages
 
@@ -69,7 +100,7 @@ To use ASureBus in your project, install the following packages:
   in Azure.Messaging.ServiceBus, Azure.Storage.Blobs, Microsoft.Extensions.Hosting and Microsoft.Data.SqlClient as
   transitive dependencies.
 - **ASureBus.Abstractions** – defines the contracts, marker interfaces and option classes. Reference this package in
-  shared projects or other microservices that only need to define or consume messages; it has no external dependencies.
+  shared projects or other microservices that only need to define messages; it has no external dependencies.
 
 ## 2. Messages and message handlers
 
@@ -250,6 +281,46 @@ their default values:
 These values configure the ServiceBusClientOptions and the concurrency of the message processors. They are used
 internally by the AzureServiceBusService when it creates queue and topic processors.
 
+#### 3.1.1 Max concurrent calls
+
+By default, ASureBus processes up to 20 messages concurrently. You can adjust this via `.ConfigureMaxConcurrentCalls()`:
+
+```csharp
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .ConfigureMaxConcurrentCalls(opt =>
+    {
+        opt.MaxConcurrentCalls = 100; // Default is 20
+    })
+    .RunConsoleAsync();
+```
+
+Increasing concurrency can improve throughput but also increases resource usage. Monitor your application's performance
+and adjust as needed.
+
+#### 3.1.2 Service Bus client options
+
+For advanced scenarios, you can directly configure the underlying `ServiceBusClientOptions` from the Azure SDK:
+
+```csharp
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .ConfigureServiceBusClientOptions(opt =>
+    {
+        // See Microsoft documentation for ServiceBusClientOptions
+        opt.TransportType = ServiceBusTransportType.AmqpTcp;
+        opt.RetryOptions = new ServiceBusRetryOptions
+        {
+            Mode = ServiceBusRetryMode.Exponential,
+            MaxRetries = 5
+        };
+    })
+    .RunConsoleAsync();
+```
+
+This gives you full control over the Service Bus client configuration when the simplified `ServiceBusConfig` options
+are not sufficient.
+
 ### 3.2 Caching (AsbCache)
 
 ASureBus caches ServiceBusSender instances and topic configurations in an in‑memory cache to avoid repeated network
@@ -342,6 +413,31 @@ based on the remaining lock duration minus the preemptive threshold. When the ti
 Adjusting the threshold lets you control how aggressively the renewal happens: a smaller threshold renews the lock
 earlier but may result in more renewals on short‑running handlers, while a larger threshold risks missing the renewal
 window if message processing slows down.
+
+### 3.6 Subscription scoped queues
+
+By default, when events are published to a topic, all subscribers receive the same message (pub/sub pattern). In some
+scenarios, you may want each consumer application instance to receive and process messages independently via a dedicated
+queue, rather than sharing messages across a common topic subscription.
+
+Enable this behaviour via `.ConfigureSubscriptionScopedQueues()`:
+
+```csharp
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .ConfigureSubscriptionScopedQueues(opt =>
+    {
+        opt.UseConsumerScopedQueueForTopics = true; // Default is false
+    })
+    .RunConsoleAsync();
+```
+
+This is particularly useful when:
+- Message resubmission is required for each consumer independently.
+- You need to distribute workloads where each instance processes its own copy of messages.
+- Testing scenarios where you want isolated message processing per consumer.
+
+See [13-UseConsumerScopedQueueForTopics](Playground/Samples/13-UseConsumerScopedQueueForTopics) for a practical example.
 
 ## 4. Messaging API
 
@@ -557,6 +653,8 @@ directory:
 - [11-SagaTimeoutTriggeredAfterCompleting](Playground/Samples/11-SagaTimeoutTriggeredAfterCompleting): Timeout after
   saga completion
 - [12-GenericTypeMessages](Playground/Samples/12-GenericTypeMessages): Typed/generic messages and routing
+- [13-UseConsumerScopedQueueForTopics](Playground/Samples/13-UseConsumerScopedQueueForTopics): Consumer-scoped queues
+  for topic subscriptions
 
 Refer to these samples for practical code examples and inspiration. Throughout this documentation, you will find direct
 links to relevant samples for each feature:
@@ -572,6 +670,7 @@ links to relevant samples for each feature:
 - **Typed Messages**: See [12-GenericTypeMessages](Playground/Samples/12-GenericTypeMessages)
 - **Error Handling**:
   See [08-ABrokenSaga](Playground/Samples/08-ABrokenSaga), [11-SagaTimeoutTriggeredAfterCompleting](Playground/Samples/11-SagaTimeoutTriggeredAfterCompleting)
+- **Subscription Scoped Queues**: See [13-UseConsumerScopedQueueForTopics](Playground/Samples/13-UseConsumerScopedQueueForTopics)
 
 For more details, browse the code in each sample folder.
 

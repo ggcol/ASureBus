@@ -31,6 +31,7 @@ internal static class Defaults
         internal const bool ENABLE_MESSAGE_LOCK_AUTO_RENEWAL = false;
         internal const int MESSAGE_LOCK_RENEWAL_PREEMPTIVE_THRESHOLD_IN_SECONDS = 10;
         internal static TimeSpan MAX_AUTO_LOCK_RENEWAL_DURATION = TimeSpan.FromMinutes(5); //this is Azure Service Bus default
+        internal const bool USE_CONSUMER_SCOPED_QUEUE_FOR_TOPICS = false;
     }
     
     internal static class SqlServerSagaPersistence
