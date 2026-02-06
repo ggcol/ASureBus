@@ -2,7 +2,7 @@
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Options;
 
-namespace ASureBus.Core;
+namespace ASureBus;
 
 internal static class AsbConfiguration
 {

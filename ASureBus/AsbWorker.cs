@@ -23,7 +23,7 @@ using ASureBus.Services.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
 
-namespace ASureBus.Core;
+namespace ASureBus;
 
 internal sealed class AsbWorker : IHostedService
 {
