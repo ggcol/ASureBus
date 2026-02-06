@@ -5,7 +5,7 @@ VisualStudioVersion = 17.8.34408.163
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASureBus", "ASureBus\ASureBus.csproj", "{F33041EA-EA7A-490D-BBCB-561D7237A5BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "Playground\Playground.csproj", "{21E5F450-4ED3-4973-B54C-196F5B23A23A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASureBus.Playground", "ASureBus.Playground\ASureBus.Playground.csproj", "{21E5F450-4ED3-4973-B54C-196F5B23A23A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ASureBus.Abstractions", "ASureBus.Abstractions\ASureBus.Abstractions.csproj", "{5BE2A8BC-A3B4-47CE-923E-9D0948C5C5B1}"
 EndProject
