@@ -1,9 +1,9 @@
 ﻿using System.Reflection;
 using ASureBus.Abstractions;
-using ASureBus.Core;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.IO.StorageAccount;
 
-namespace ASureBus.Accessories.Heavies.Entities;
+namespace ASureBus.Accessories.Heavies;
 
 internal static class HeavyIo
 {

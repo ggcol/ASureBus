@@ -1,6 +1,5 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects.Config;
-using ASureBus.Core;
 using ASureBus.Core.DI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

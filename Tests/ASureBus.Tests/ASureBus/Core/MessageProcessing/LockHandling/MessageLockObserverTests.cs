@@ -1,5 +1,4 @@
 using ASureBus.ConfigurationObjects.Options;
-using ASureBus.Core;
 using ASureBus.Core.MessageProcessing.LockHandling;
 using Azure.Core.Amqp;
 using Azure.Messaging.ServiceBus;

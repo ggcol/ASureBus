@@ -1,4 +1,3 @@
-using ASureBus.Abstractions;
 using ASureBus.IntegrationTests.TestConfigurations;
 
 namespace ASureBus.IntegrationTests._03_MessageLockRenewal;

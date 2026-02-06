@@ -1,6 +1,6 @@
 ﻿using System.Text;
 using ASureBus.Abstractions;
-using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.Entities;
 using ASureBus.Utils;

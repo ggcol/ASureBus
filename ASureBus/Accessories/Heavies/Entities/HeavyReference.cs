@@ -1,4 +1,4 @@
-﻿namespace ASureBus.Accessories.Heavies;
+﻿namespace ASureBus.Accessories.Heavies.Entities;
 
 internal class HeavyReference
 {

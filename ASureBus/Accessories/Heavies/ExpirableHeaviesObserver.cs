@@ -1,5 +1,4 @@
 using ASureBus.Abstractions;
-using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Behaviours;
 
 namespace ASureBus.Accessories.Heavies;
