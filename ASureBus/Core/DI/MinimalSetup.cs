@@ -28,6 +28,7 @@ using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling;
+using ASureBus.IO.SagaPersistence;
 using ASureBus.IO.ServiceBus;
 using ASureBus.Utils;
 using Microsoft.Extensions.DependencyInjection;
@@ -135,6 +136,7 @@ public static class MinimalSetup
                     .AddSingleton<IMessagingContext, MessagingContext>()
                     .AddSingleton<IMessageEmitter, MessageEmitter>()
                     .AddSingleton<ISagaIO, SagaIO>()
+                    .AddSingleton<ISagaPersistenceService, SagaUnconfiguredPersistenceService>()
                     .AddSingleton<IProcessSagaMessages, SagaMessagesProcessor>()
                     .AddSingleton<IProcessHandlerMessages, HandlerMessagesProcessor>()
                     .AddSingleton<IMessageLockObserver, MessageLockObserver>();

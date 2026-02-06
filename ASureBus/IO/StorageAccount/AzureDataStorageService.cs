@@ -33,6 +33,11 @@ internal sealed class AzureDataStorageService(string? connectionString)
             await MakeContainerClient(containerName, cancellationToken)
                 .ConfigureAwait(false);
         var blobClient = containerClient.GetBlobClient(blobName);
+        
+        if (!await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return null;
+        }
 
         var downloadInfo = await blobClient
             .OpenReadAsync(cancellationToken: cancellationToken)

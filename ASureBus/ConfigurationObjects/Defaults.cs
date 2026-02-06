@@ -38,4 +38,9 @@ internal static class Defaults
     {
         internal const string SCHEMA = "sagas";
     }
+    
+    internal static class FileSystemSagaPersistence
+    {
+        internal const string ROOT_DIRECTORY_PATH = "./sagas";
+    }
 }

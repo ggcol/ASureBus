@@ -189,6 +189,23 @@ await Host
     //     opt.Schema = "schema-name"; // Optional, defaults to "sagas"
     // })
     
+    // Configure the application to use file system for saga persistence with the specified settings
+    // .UseFileSystemSagaPersistence<FIleSystemSagaPersistenceSettings>()
+    
+    // Configure the application to use file system for saga persistence with a custom configuration
+    // .UseFileSystemSagaPersistence(new FileSystemSagaPersistenceConfig
+    // {
+    //     RootDirectoryPath = "a-path"
+    // })
+
+    // Configure the application to use file system for saga persistence using delegate
+    // .UseFileSystemSagaPersistence(opt =>
+    // {
+    //     opt.RootDirectoryPath = "a-path";
+    // })
+    
+    // Configure the application to use file system for saga persistence with default settings
+    // .UseFileSystemSagaPersistence()
     
     
     /*

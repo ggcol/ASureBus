@@ -366,19 +366,145 @@ await context.Send(new UploadDocument
 ### 3.4 Saga persistence
 
 ASureBus stores saga state in an in‑memory cache by default. **This is sufficient for testing but unsuitable for
-production because data is lost on restart**. You can persist sagas in either SQL Server or Azure Blob Storage.
-Configuration classes implement `IConfigureSqlServerSagaPersistence` and `IConfigureDataStorageSagaPersistence`
-respectively. Provide the connection string (and container for data storage) to persist saga snapshots. Use one of the
-following extension methods:
+production because data is lost on restart**. You can persist sagas to SQL Server, Azure Blob Storage, or the local
+file system. Configuration classes implement `IConfigureSqlServerSagaPersistence`, `IConfigureDataStorageSagaPersistence`
+and `IConfigureFileSystemSagaPersistence` respectively. Use one of the following extension methods:
 
 - `.UseSqlServerSagaPersistence()` – persists saga data into a table named `<SagaType>` under a default schema (
-  configurable). ASureBus creates the table if it doesn’t exist and uses JSON to serialize the saga data. You only need
+  configurable). ASureBus creates the table if it doesn't exist and uses JSON to serialize the saga data. You only need
   to supply the connection string.
 - `.UseDataStorageSagaPersistence()` – uses Azure Blob Storage to store saga state. A blob is created for each saga
   instance; supply a connection string and container name.
+- `.UseFileSystemSagaPersistence()` – uses the local file system to store saga state. A JSON file is created for each
+  saga instance under a root directory. This option is useful for development, testing, or single-instance deployments
+  where external storage is not required.
 
-Both providers work together with the in‑memory cache (AsbCache) to speed up saga retrieval. When a saga completes,
+All providers work together with the in‑memory cache (AsbCache) to speed up saga retrieval. When a saga completes,
 ASureBus deletes its persisted record.
+
+#### 3.4.1 SQL Server saga persistence
+
+To persist sagas to SQL Server, call `.UseSqlServerSagaPersistence()`. ASureBus will automatically create a table for
+each saga type if it doesn't exist. The saga data is serialized as JSON and stored with the correlation ID as the
+primary key.
+
+```csharp
+// Pattern 1: Generic type (binds from IConfiguration)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseSqlServerSagaPersistence<MySqlServerSettings>()
+    .RunConsoleAsync();
+
+// Pattern 2: Config object
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseSqlServerSagaPersistence(new SqlServerSagaPersistenceConfig
+    {
+        ConnectionString = "<sql-connection-string>",
+        Schema = "my-schema" // optional
+    })
+    .RunConsoleAsync();
+
+// Pattern 3: Delegate (Action)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseSqlServerSagaPersistence(opt =>
+    {
+        opt.ConnectionString = "<sql-connection-string>";
+        opt.Schema = "my-schema"; // optional
+    })
+    .RunConsoleAsync();
+```
+
+| Property         | Description                                           | Default  |
+|------------------|-------------------------------------------------------|----------|
+| ConnectionString | Required. The SQL Server connection string.           | —        |
+| Schema           | Schema name for the saga tables.                      | `sagas`  |
+
+Each saga type gets its own table named after the saga class (e.g., `OrderSaga`). The table is created under the
+configured schema with columns for the correlation ID (primary key) and the JSON-serialized saga data.
+
+#### 3.4.2 Azure Data Storage saga persistence
+
+To persist sagas to Azure Blob Storage, call `.UseDataStorageSagaPersistence()`. Each saga instance is stored as a
+separate blob, named using the saga type and correlation ID.
+
+```csharp
+// Pattern 1: Generic type (binds from IConfiguration)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseDataStorageSagaPersistence<MyDataStorageSettings>()
+    .RunConsoleAsync();
+
+// Pattern 2: Config object
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseDataStorageSagaPersistence(new DataStorageSagaPersistenceConfig
+    {
+        ConnectionString = "<storage-connection-string>",
+        Container = "sagas"
+    })
+    .RunConsoleAsync();
+
+// Pattern 3: Delegate (Action)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseDataStorageSagaPersistence(opt =>
+    {
+        opt.ConnectionString = "<storage-connection-string>";
+        opt.Container = "sagas";
+    })
+    .RunConsoleAsync();
+```
+
+| Property         | Description                                                    | Default |
+|------------------|----------------------------------------------------------------|---------|
+| ConnectionString | Required. The Azure Storage account connection string.         | —       |
+| Container        | Required. The blob container name for storing saga data.       | —       |
+
+Saga data is stored as JSON blobs organized by saga type. For example, a saga of type `OrderSaga` with correlation ID
+`abc123` would be stored as a blob named `OrderSaga/abc123` in the configured container.
+
+#### 3.4.3 File system saga persistence
+
+To persist sagas to the file system, call `.UseFileSystemSagaPersistence()`. The only configuration property is
+`RootDirectoryPath`, which specifies the root directory where saga JSON files are stored. If not specified, the default
+is `./sagas`.
+
+```csharp
+// Pattern 1: Generic type (binds from IConfiguration)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseFileSystemSagaPersistence<MyFileSystemSettings>()
+    .RunConsoleAsync();
+
+// Pattern 2: Config object
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseFileSystemSagaPersistence(new FileSystemSagaPersistenceConfig
+    {
+        RootDirectoryPath = "./my-sagas"
+    })
+    .RunConsoleAsync();
+
+// Pattern 3: Delegate (Action)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseFileSystemSagaPersistence(opt =>
+    {
+        opt.RootDirectoryPath = "./my-sagas";
+    })
+    .RunConsoleAsync();
+
+// Pattern 4: Default settings (uses ./sagas as root directory)
+await Host.CreateDefaultBuilder()
+    .UseAsb(opt => opt.ConnectionString = "<connection-string>")
+    .UseFileSystemSagaPersistence()
+    .RunConsoleAsync();
+```
+
+Saga data is stored as JSON files organized by saga type in subdirectories. For example, a saga of type `OrderSaga` with
+correlation ID `abc123` would be stored at `./sagas/OrderSaga/abc123.json`.
 
 ### 3.5 Message lock auto‑renewal
 
@@ -542,8 +668,8 @@ immediate processing.
 
 ## 6. Saga persistence
 
-By default, sagas are cached in memory. To persist them, configure either SQL Server or Azure Storage as described in
-Section 3.4. Internally, `SagaFactory` attempts to load saga data from the cache first; if it isn’t present it will call
+By default, sagas are cached in memory. To persist them, configure SQL Server, Azure Storage, or file system as described in
+Section 3.4. Internally, `SagaFactory` attempts to load saga data from the cache first; if it isn't present it will call
 the configured persistence service to load the saga from storage. The saga is then stored in both cache and persistence
 storage for subsequent calls. When the saga calls `IAmComplete()` the data is removed from both the cache and the
 persistence provider.
@@ -553,6 +679,9 @@ persistence provider.
   can be reconstructed via `SagaConverter`.
 - Azure Storage persistence – `AzureDataStorageService` stores saga data as blobs. Each blob is named using the saga
   type and correlation ID; it is deleted when the saga completes.
+- File system persistence – `FileSystemService` stores saga data as JSON files on the local file system. Files are 
+  organized in subdirectories by saga type, with each file named by correlation ID. This option is ideal for development,
+  testing, or single-instance deployments.
 
 Using persistence ensures that sagas survive application restarts and that long‑running workflows are durable. For unit
 tests or simple demos you can omit these calls and rely on the in‑memory cache.
@@ -612,7 +741,7 @@ Bus with minimal boilerplate while still having fine‑grained control over tran
 - Lightweight abstractions – commands, events, timeouts and sagas are simple classes or records; handler and saga
   discovery is automatic.
 - Heavy property off‑loading allowing large payloads to be stored in Azure Blob Storage.
-- Durable sagas – built‑in persistence for sagas via SQL Server or Azure Storage.
+- Durable sagas – built‑in persistence for sagas via SQL Server, Azure Storage, or file system.
 
 ### Weaknesses
 
@@ -645,7 +774,7 @@ directory:
   in a single handler
 - [04-ASaga](Playground/Samples/04-ASaga): Basic saga workflow
 - [05-Heavy](Playground/Samples/05-Heavy): Heavy property off-loading to Azure Blob Storage
-- [06-SagaPersistence](Playground/Samples/06-SagaPersistence): Saga persistence with SQL Server/Azure Storage
+- [06-SagaPersistence](Playground/Samples/06-SagaPersistence): Saga persistence with SQL Server/Azure Storage/File System
 - [07-DelayedAndScheduled](Playground/Samples/07-DelayedAndScheduled): Delayed and scheduled message delivery
 - [08-ABrokenSaga](Playground/Samples/08-ABrokenSaga): Error handling in sagas
 - [09-LongerSaga](Playground/Samples/09-LongerSaga): Extended saga workflow

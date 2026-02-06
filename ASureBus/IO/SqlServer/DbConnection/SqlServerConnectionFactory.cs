@@ -2,10 +2,10 @@
 
 namespace ASureBus.IO.SqlServer.DbConnection;
 
-public class SqlServerConnectionFactory(string connectionString) : IDbConnectionFactory
+public class SqlServerConnectionFactory : IDbConnectionFactory
 {
     public System.Data.Common.DbConnection CreateConnection()
     {
-        return new SqlConnection(connectionString);
+        return new SqlConnection(AsbConfiguration.SqlServerSagaPersistence!.ConnectionString);
     }
 }
