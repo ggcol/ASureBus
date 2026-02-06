@@ -1,10 +1,11 @@
-﻿using ASureBus.Core.TypesHandling.Entities;
-using ASureBus.Services.SqlServer;
-using Moq;
-using ASureBus.Abstractions;
+﻿using ASureBus.Abstractions;
+using ASureBus.Core.TypesHandling.Entities;
+using ASureBus.IO.SagaPersistence;
+using ASureBus.IO.SqlServer;
 using ASureBus.Utils;
+using Moq;
 
-namespace ASureBus.Tests.ASureBus.Services.SqlServer;
+namespace ASureBus.Tests.ASureBus.IO.SqlServer;
 
 [TestFixture]
 public class SagaSqlServerPersistenceServiceTests

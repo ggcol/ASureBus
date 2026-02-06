@@ -1,6 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 
-namespace ASureBus.Services.SqlServer.DbConnection;
+namespace ASureBus.IO.SqlServer.DbConnection;
 
 public class SqlServerConnectionFactory(string connectionString) : IDbConnectionFactory
 {

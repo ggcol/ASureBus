@@ -1,12 +1,11 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.ConfigurationObjects.Config;
-using ASureBus.Core;
 using ASureBus.Core.TypesHandling.Entities;
-using ASureBus.Services.SqlServer;
-using ASureBus.Services.SqlServer.DbConnection;
+using ASureBus.IO.SqlServer;
+using ASureBus.IO.SqlServer.DbConnection;
 using ASureBus.Utils;
 
-namespace ASureBus.Tests.ASureBus.Services.SqlServer;
+namespace ASureBus.Tests.ASureBus.IO.SqlServer;
 
 [TestFixture]
 [Platform("Win")]

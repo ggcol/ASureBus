@@ -1,7 +1,7 @@
 ﻿using ASureBus.Core.TypesHandling.Entities;
 using Azure.Messaging.ServiceBus;
 
-namespace ASureBus.Services.ServiceBus;
+namespace ASureBus.IO.ServiceBus;
 
 internal interface IAzureServiceBusService
 {

@@ -1,8 +1,9 @@
 ﻿using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling.Entities;
+using ASureBus.IO.SqlServer;
 using ASureBus.Utils;
 
-namespace ASureBus.Services.SqlServer;
+namespace ASureBus.IO.SagaPersistence;
 
 internal class SagaSqlServerPersistenceService(ISqlServerService storage, IServiceProvider services) 
     : ISagaPersistenceService

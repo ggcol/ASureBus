@@ -1,4 +1,4 @@
-using ASureBus.Services.ServiceBus;
+using ASureBus.IO.ServiceBus;
 
 namespace ASureBus.Core.TypesHandling;
 

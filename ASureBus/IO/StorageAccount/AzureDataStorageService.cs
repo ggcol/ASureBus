@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using ASureBus.Utils;
 using Azure.Storage.Blobs;
 
-namespace ASureBus.Services.StorageAccount;
+namespace ASureBus.IO.StorageAccount;
 
 internal sealed class AzureDataStorageService(string? connectionString)
     : IAzureDataStorageService

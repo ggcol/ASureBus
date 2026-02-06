@@ -1,6 +1,6 @@
 ﻿using ASureBus.Core.TypesHandling.Entities;
 
-namespace ASureBus.Services;
+namespace ASureBus.IO.SagaPersistence;
 
 internal interface ISagaPersistenceService
 {

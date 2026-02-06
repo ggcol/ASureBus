@@ -1,12 +1,11 @@
 ﻿using System.Reflection;
-using ASureBus.Core;
 using ASureBus.Core.Caching;
 using ASureBus.Core.TypesHandling;
 using ASureBus.Core.TypesHandling.Entities;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 
-namespace ASureBus.Services.ServiceBus;
+namespace ASureBus.IO.ServiceBus;
 
 internal sealed class AzureServiceBusService(IAsbCache cache)
     : IAzureServiceBusService

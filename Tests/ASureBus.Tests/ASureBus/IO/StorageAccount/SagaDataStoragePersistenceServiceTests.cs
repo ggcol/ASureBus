@@ -1,9 +1,10 @@
 ﻿using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling.Entities;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.SagaPersistence;
+using ASureBus.IO.StorageAccount;
 using Moq;
 
-namespace ASureBus.Tests.ASureBus.Services.StorageAccount;
+namespace ASureBus.Tests.ASureBus.IO.StorageAccount;
 
 [TestFixture]
 public class SagaDataStoragePersistenceServiceTests

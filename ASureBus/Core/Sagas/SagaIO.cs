@@ -1,8 +1,8 @@
 ﻿using ASureBus.Core.TypesHandling.Entities;
-using ASureBus.Services;
-using ASureBus.Services.SqlServer;
-using ASureBus.Services.SqlServer.DbConnection;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.SagaPersistence;
+using ASureBus.IO.SqlServer;
+using ASureBus.IO.SqlServer.DbConnection;
+using ASureBus.IO.StorageAccount;
 
 namespace ASureBus.Core.Sagas;
 

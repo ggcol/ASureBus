@@ -28,7 +28,7 @@ using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling;
-using ASureBus.Services.ServiceBus;
+using ASureBus.IO.ServiceBus;
 using ASureBus.Utils;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

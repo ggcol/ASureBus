@@ -1,8 +1,7 @@
-﻿using ASureBus.Core;
-using ASureBus.Services.SqlServer.DbConnection;
+﻿using ASureBus.IO.SqlServer.DbConnection;
 using Microsoft.Data.SqlClient;
 
-namespace ASureBus.Services.SqlServer;
+namespace ASureBus.IO.SqlServer;
 
 internal sealed class SqlServerService(IDbConnectionFactory connectionFactory) : ISqlServerService
 {

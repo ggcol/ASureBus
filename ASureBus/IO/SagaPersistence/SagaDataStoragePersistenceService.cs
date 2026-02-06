@@ -1,8 +1,8 @@
-﻿using ASureBus.Core;
-using ASureBus.Core.Sagas;
+﻿using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling.Entities;
+using ASureBus.IO.StorageAccount;
 
-namespace ASureBus.Services.StorageAccount;
+namespace ASureBus.IO.SagaPersistence;
 
 internal sealed class SagaDataStoragePersistenceService(
     IAzureDataStorageService storage,

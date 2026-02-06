@@ -1,8 +1,7 @@
 ﻿using ASureBus.ConfigurationObjects;
 using ASureBus.ConfigurationObjects.Config;
-using ASureBus.Core;
 
-namespace ASureBus.Tests.ASureBus.Core;
+namespace ASureBus.Tests.ASureBus;
 
 [TestFixture]
 public class AsbConfigurationTests

@@ -7,7 +7,7 @@ using ASureBus.Core.DI;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling;
-using ASureBus.Services.ServiceBus;
+using ASureBus.IO.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

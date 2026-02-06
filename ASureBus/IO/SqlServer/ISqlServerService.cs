@@ -1,4 +1,4 @@
-﻿namespace ASureBus.Services.SqlServer;
+﻿namespace ASureBus.IO.SqlServer;
 
 internal interface ISqlServerService
 {

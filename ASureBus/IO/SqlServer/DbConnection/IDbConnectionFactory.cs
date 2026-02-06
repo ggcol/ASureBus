@@ -1,4 +1,4 @@
-﻿namespace ASureBus.Services.SqlServer.DbConnection;
+﻿namespace ASureBus.IO.SqlServer.DbConnection;
 
 public interface IDbConnectionFactory
 {

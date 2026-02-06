@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using ASureBus.Abstractions;
 using ASureBus.Core;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.StorageAccount;
 
 namespace ASureBus.Accessories.Heavies.Entities;
 

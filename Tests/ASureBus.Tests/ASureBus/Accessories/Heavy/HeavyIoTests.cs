@@ -3,7 +3,7 @@ using ASureBus.Accessories.Heavies;
 using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.StorageAccount;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Accessories.Heavy;

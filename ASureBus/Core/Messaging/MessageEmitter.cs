@@ -1,5 +1,5 @@
 ﻿using ASureBus.Core.Entities;
-using ASureBus.Services.ServiceBus;
+using ASureBus.IO.ServiceBus;
 using ASureBus.Utils;
 using Azure.Messaging.ServiceBus;
 

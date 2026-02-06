@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace ASureBus.Services.StorageAccount;
+namespace ASureBus.IO.StorageAccount;
 
 internal interface IAzureDataStorageService
 {

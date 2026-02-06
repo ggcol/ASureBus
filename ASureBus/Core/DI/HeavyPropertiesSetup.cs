@@ -4,7 +4,7 @@ using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
 using ASureBus.ConfigurationObjects.Options;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.StorageAccount;
 using ASureBus.Utils;
 using Microsoft.Extensions.Hosting;
 

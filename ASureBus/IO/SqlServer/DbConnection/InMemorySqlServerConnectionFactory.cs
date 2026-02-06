@@ -1,7 +1,6 @@
-﻿using ASureBus.Core;
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
-namespace ASureBus.Services.SqlServer.DbConnection;
+namespace ASureBus.IO.SqlServer.DbConnection;
 
 public class InMemorySqlServerConnectionFactory : IDbConnectionFactory
 {
