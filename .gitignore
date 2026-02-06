@@ -403,6 +403,7 @@ qodana.yaml
 
 **/.DS_Store
 
-ASureBus.ThirdPartyTests/AutoMapper/License.txt
-
-ASureBus.IntegrationTests/integrationTestsSettings.json
+# Exclude test configuration files and/or license. CI/CD uses github secrets
+Tests/**/License.*
+Tests/**/*Settings.*
+Tests/**/*settings.*
