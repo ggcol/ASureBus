@@ -199,6 +199,8 @@ public static class SagaPersistenceSetup
 
     private static void RemovePersistencePlaceholderService(IServiceCollection services)
     {
+        if (services.Count <= 0) return;
+        
         var service = services.SingleOrDefault(x => x.ServiceType == typeof(ISagaPersistenceService));
         if (service is not null)
         {
