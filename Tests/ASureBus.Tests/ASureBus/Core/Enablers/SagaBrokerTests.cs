@@ -1,8 +1,9 @@
 ﻿using System.Text;
 using ASureBus.Abstractions;
-using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.Entities;
+using ASureBus.IO.Heavies;
 using ASureBus.Utils;
 using Moq;
 
@@ -14,13 +15,16 @@ public class SagaBrokerTests
     private FakeSaga _fakeSaga;
     private Mock<IMessagingContext> _contextMock;
     private SagaBroker<FakeSagaData, SagaBrokerTestMessage> _sagaBroker;
+    private Mock<IHeavyIO> _heavyIOMock;
 
     [SetUp]
     public void SetUp()
     {
         _fakeSaga = new FakeSaga();
         _contextMock = new Mock<IMessagingContext>();
-        _sagaBroker = new SagaBroker<FakeSagaData, SagaBrokerTestMessage>(_fakeSaga, _contextMock.Object);
+        _heavyIOMock = new Mock<IHeavyIO>();
+        
+        _sagaBroker = new SagaBroker<FakeSagaData, SagaBrokerTestMessage>(_fakeSaga, _contextMock.Object, _heavyIOMock.Object);
     }
 
     [Test]

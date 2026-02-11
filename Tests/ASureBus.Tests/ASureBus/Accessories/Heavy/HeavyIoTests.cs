@@ -2,8 +2,8 @@
 using ASureBus.Accessories.Heavies;
 using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.ConfigurationObjects.Config;
-using ASureBus.Core;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.Heavies;
+using ASureBus.IO.StorageAccount;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Accessories.Heavy;
@@ -11,6 +11,7 @@ namespace ASureBus.Tests.ASureBus.Accessories.Heavy;
 [TestFixture]
 public class HeavyIoTests
 {
+    private IHeavyIO _heavyIO;
     private Mock<IAzureDataStorageService> _storageMock;
     private Mock<IExpirableHeaviesObserver> _expirableHeaviesObserverMock;
 
@@ -19,21 +20,19 @@ public class HeavyIoTests
     {
         _storageMock = new Mock<IAzureDataStorageService>();
         _expirableHeaviesObserverMock = new Mock<IExpirableHeaviesObserver>();
-
+        _heavyIO = new HeavyIO(_storageMock.Object, _expirableHeaviesObserverMock.Object);
+        
         AsbConfiguration.HeavyProps = new HeavyPropertiesConfig
         {
             ConnectionString = "UseDevelopmentStorage=true",
             Container = "test-container"
         };
-
-        HeavyIo.ConfigureStorage(_storageMock.Object, _expirableHeaviesObserverMock.Object);
     }
 
     [TearDown]
     public void TearDown()
     {
         AsbConfiguration.HeavyProps = null;
-        HeavyIo.ConfigureStorage(null, null);
     }
 
     [Test]
@@ -43,7 +42,7 @@ public class HeavyIoTests
         var message = new Mock<IAmAMessage>().Object;
 
         // Act
-        var result = await HeavyIo.Unload(message, Guid.NewGuid());
+        var result = await _heavyIO.Unload(message, Guid.NewGuid());
 
         // Assert
         Assert.That(result, Is.Empty);
@@ -76,7 +75,7 @@ public class HeavyIoTests
             .Returns(Task.CompletedTask);
 
         // Act
-        var result = await HeavyIo.Unload(message, messageId);
+        var result = await _heavyIO.Unload(message, messageId);
 
         // Assert
         Assert.That(result.Count, Is.EqualTo(1));
@@ -103,7 +102,7 @@ public class HeavyIoTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await HeavyIo.Unload(message, messageId);
+        await _heavyIO.Unload(message, messageId);
 
         // Assert
         var heavyProp = message.GetType().GetProperty(nameof(AFakeMessage.AStringProp));
@@ -133,7 +132,7 @@ public class HeavyIoTests
             .ReturnsAsync(expectedHeavy);
 
         // Act
-        await HeavyIo.Load(message, heavies, messageId);
+        await _heavyIO.Load(message, heavies, messageId);
 
         // Assert
         var heavyProp = message.GetType().GetProperty(nameof(AFakeMessage.AStringProp));
@@ -163,7 +162,7 @@ public class HeavyIoTests
             .Returns(Task.CompletedTask);
 
         // Act
-        await HeavyIo.Delete(messageId, heavyRef.Ref);
+        await _heavyIO.Delete(messageId, heavyRef.Ref);
 
         // Assert
         _storageMock.Verify(

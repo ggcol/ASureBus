@@ -1,8 +1,9 @@
 ﻿using System.Text;
 using ASureBus.Abstractions;
-using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.Entities;
+using ASureBus.IO.Heavies;
 using ASureBus.Utils;
 using Moq;
 
@@ -14,15 +15,15 @@ public class HandlerBrokerTests
     private FakeHandler _fakeHandler;
     private Mock<IMessagingContext> _mockContext;
     private HandlerBroker<HandlerBrokerTestsMessage> _handlerBroker;
-    
+    private Mock<IHeavyIO> _heavyIOMock;
     [SetUp]
     public void SetUp()
     {
         _fakeHandler = new FakeHandler();
         _mockContext = new Mock<IMessagingContext>();
+        _heavyIOMock = new Mock<IHeavyIO>();
 
-        _handlerBroker = new HandlerBroker<HandlerBrokerTestsMessage>(_fakeHandler,
-            _mockContext.Object);
+        _handlerBroker = new HandlerBroker<HandlerBrokerTestsMessage>(_fakeHandler, _mockContext.Object, _heavyIOMock.Object);
     }
 
     [Test]

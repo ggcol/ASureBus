@@ -15,11 +15,15 @@ internal static class AsbConfiguration
     public static HeavyPropertiesConfig? HeavyProps { get; set; }
 
     //saga offloading configuration
-    internal static bool OffloadSagas => UseDataStorageSagaPersistence || UseSqlServerSagaPersistence;
-    internal static bool UseDataStorageSagaPersistence => DataStorageSagaPersistence is not null;
-    internal static bool UseSqlServerSagaPersistence => SqlServerSagaPersistence is not null;
+    internal static bool OffloadSagas => 
+        DataStorageSagaPersistence is not null 
+        || 
+        SqlServerSagaPersistence is not null 
+        || 
+        FileSystemSagaPersistence is not null;
     public static DataStorageSagaPersistenceConfig? DataStorageSagaPersistence { get; set; }
     public static SqlServerSagaPersistenceConfig? SqlServerSagaPersistence { get; set; }
+    public static FileSystemSagaPersistenceConfig? FileSystemSagaPersistence { get; set; }
 
     //message lock renewal configuration
     public static bool EnableMessageLockAutoRenewal

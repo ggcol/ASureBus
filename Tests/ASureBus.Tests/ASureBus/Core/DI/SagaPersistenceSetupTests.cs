@@ -1,9 +1,9 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core.DI;
-using ASureBus.Services;
-using ASureBus.Services.SqlServer;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.SagaPersistence;
+using ASureBus.IO.SqlServer;
+using ASureBus.IO.StorageAccount;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

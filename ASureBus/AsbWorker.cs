@@ -19,7 +19,7 @@ using ASureBus.Core.MessageProcessing;
 using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.TypesHandling;
 using ASureBus.Core.TypesHandling.Entities;
-using ASureBus.Services.ServiceBus;
+using ASureBus.IO.ServiceBus;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Hosting;
 

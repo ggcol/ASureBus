@@ -1,13 +1,13 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
-using ASureBus.Accessories.Heavies;
 using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Entities;
 using ASureBus.Core.TypesHandling;
+using ASureBus.IO.Heavies;
 
 namespace ASureBus.Core.Messaging;
 
-internal abstract class CollectMessage : ICollectMessage
+internal abstract class CollectMessage(IHeavyIO heavyIO) : ICollectMessage
 {
     public Queue<IAsbMessage> Messages { get; } = new();
     public Guid CorrelationId { get; set; } = Guid.NewGuid();
@@ -32,12 +32,12 @@ internal abstract class CollectMessage : ICollectMessage
         Messages.Enqueue(asbMessage);
     }
 
-    private static async Task<IReadOnlyList<HeavyReference>> UnloadHeavies<TMessage>(
+    private async Task<IReadOnlyList<HeavyReference>> UnloadHeavies<TMessage>(
         TMessage message, Guid messageId, CancellationToken cancellationToken)
         where TMessage : IAmAMessage
     {
-        return HeavyIo.IsHeavyConfigured()
-            ? await HeavyIo.Unload(message, messageId, cancellationToken).ConfigureAwait(false)
+        return heavyIO.IsHeavyConfigured
+            ? await heavyIO.Unload(message, messageId, cancellationToken).ConfigureAwait(false)
             : [];
     }
 

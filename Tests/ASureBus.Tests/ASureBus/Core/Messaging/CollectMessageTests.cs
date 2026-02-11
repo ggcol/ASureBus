@@ -1,8 +1,8 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
-using ASureBus.Core;
 using ASureBus.Core.Entities;
 using ASureBus.Core.Messaging;
+using ASureBus.IO.Heavies;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.Messaging;
@@ -24,7 +24,7 @@ public class CollectMessageTests
         // this grant no heavy properties related logic will be used
         AsbConfiguration.HeavyProps = null;
 
-        _collectMessage = new TestCollectMessage();
+        _collectMessage = new TestCollectMessage(new Mock<IHeavyIO>().Object);
     }
 
     [Test]
@@ -53,7 +53,7 @@ public class CollectMessageTests
         Assert.That(enqueuedMessage.Header.ScheduledTime, Is.EqualTo(scheduledTime));
     }
 
-    private class TestCollectMessage : CollectMessage
+    private class TestCollectMessage(IHeavyIO heavyIO) : CollectMessage(heavyIO)
     {
         public new async Task Enqueue<TMessage>(TMessage message, EmitOptions? options,
             CancellationToken cancellationToken)

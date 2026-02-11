@@ -1,11 +1,12 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.Accessories.Heavies;
-using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
 using ASureBus.ConfigurationObjects.Options;
-using ASureBus.Services.StorageAccount;
+using ASureBus.IO.Heavies;
+using ASureBus.IO.StorageAccount;
 using ASureBus.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace ASureBus.Core.DI;
@@ -25,7 +26,8 @@ public static class HeavyPropertiesSetup
                 ConnectionString = settings.ConnectionString,
                 Container = settings.Container
             };
-            ConfigureStorage();
+            
+            ConfigureDependencies(hostBuilder);
         });
 
 
@@ -40,7 +42,7 @@ public static class HeavyPropertiesSetup
 
         AsbConfiguration.HeavyProps = heavyPropsConfig;
 
-        ConfigureStorage();
+        ConfigureDependencies(hostBuilder);
 
         return hostBuilder;
     }
@@ -63,15 +65,26 @@ public static class HeavyPropertiesSetup
             Container = opt.Container
         };
         
-        ConfigureStorage();
+        ConfigureDependencies(hostBuilder);
         
         return hostBuilder;
     }
 
-    private static void ConfigureStorage()
+    private static void ConfigureDependencies(IHostBuilder hostBuilder)
     {
-        HeavyIo.ConfigureStorage(
-            new AzureDataStorageService(AsbConfiguration.HeavyProps!.ConnectionString),
-            new ExpirableHeaviesObserver());
+        hostBuilder.ConfigureServices(services =>
+        {
+            services.RemoveService<IHeavyIO>();
+            
+            services
+                .AddSingleton<IExpirableHeaviesObserver, ExpirableHeaviesObserver>()
+                .AddSingleton<IHeavyIO, HeavyIO>();
+            
+            if (!services.TryGetSingleOrDefault<IAzureDataStorageService>(out _))
+            {
+                services.AddSingleton<IAzureDataStorageService>(
+                    new AzureDataStorageService(AsbConfiguration.HeavyProps!.ConnectionString));
+            }
+        });
     }
 }

@@ -1,6 +1,5 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects.Config;
-using ASureBus.Core;
 using ASureBus.Core.DI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,11 +39,12 @@ public class HeavyPropertiesSetupTests
     public void UseHeavyProps_WithSettings_RegistersExpectedServices()
     {
         // Arrange
-        _mockConfiguration.Setup(c => c.GetSection(It.IsAny<string>()))
+        _mockConfiguration
+            .Setup(c => c.GetSection(It.IsAny<string>()))
             .Returns(new Mock<IConfigurationSection>().Object);
 
-        _mockHostBuilder.Setup(h =>
-                h.ConfigureServices(It.IsAny<Action<HostBuilderContext, IServiceCollection>>()))
+        _mockHostBuilder
+            .Setup(h => h.ConfigureServices(It.IsAny<Action<HostBuilderContext, IServiceCollection>>()))
             .Callback((Action<HostBuilderContext, IServiceCollection> configureServices) =>
             {
                 configureServices(_hostBuilderContext, _mockServiceCollection.Object);
@@ -55,13 +55,13 @@ public class HeavyPropertiesSetupTests
 
         // Assert
         Assert.That(AsbConfiguration.HeavyProps, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(AsbConfiguration.HeavyProps.ConnectionString,
                 Is.EqualTo("TestConnectionString"));
             Assert.That(AsbConfiguration.HeavyProps.Container,
                 Is.EqualTo("TestContainer"));
-        });
+        }
     }
 
     [Test]
@@ -73,9 +73,9 @@ public class HeavyPropertiesSetupTests
             ConnectionString = "TestConnectionString",
             Container = "TestContainer"
         };
-
-        _mockHostBuilder.Setup(h =>
-                h.ConfigureServices(It.IsAny<Action<HostBuilderContext, IServiceCollection>>()))
+        
+        _mockHostBuilder
+            .Setup(h => h.ConfigureServices(It.IsAny<Action<HostBuilderContext, IServiceCollection>>()))
             .Callback((Action<HostBuilderContext, IServiceCollection> configureServices) =>
             {
                 configureServices(_hostBuilderContext, _mockServiceCollection.Object);
@@ -86,13 +86,13 @@ public class HeavyPropertiesSetupTests
 
         // Assert
         Assert.That(AsbConfiguration.HeavyProps, Is.Not.Null);
-        Assert.Multiple(() =>
+        using (Assert.EnterMultipleScope())
         {
             Assert.That(AsbConfiguration.HeavyProps.ConnectionString,
                 Is.EqualTo("TestConnectionString"));
             Assert.That(AsbConfiguration.HeavyProps.Container,
                 Is.EqualTo("TestContainer"));
-        });
+        }
     }
 }
 

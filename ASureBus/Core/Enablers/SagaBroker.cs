@@ -1,13 +1,15 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Core.Entities;
 using ASureBus.Core.Exceptions;
+using ASureBus.IO.Heavies;
 
 namespace ASureBus.Core.Enablers;
 
 internal sealed class SagaBroker<TSagaData, TMessage>(
     Saga<TSagaData> saga,
-    IMessagingContext context)
-    : BrokerBehavior<TMessage>(context), ISagaBroker
+    IMessagingContext context,
+    IHeavyIO heavyIO)
+    : BrokerBehavior<TMessage>(context, heavyIO), ISagaBroker
     where TSagaData : SagaData, new()
     where TMessage : IAmAMessage
 {

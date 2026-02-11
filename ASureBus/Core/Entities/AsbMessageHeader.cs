@@ -1,4 +1,4 @@
-using ASureBus.Accessories.Heavies;
+using ASureBus.Accessories.Heavies.Entities;
 
 namespace ASureBus.Core.Entities;
 
