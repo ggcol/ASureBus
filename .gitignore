@@ -405,5 +405,5 @@ qodana.yaml
 
 # Exclude test configuration files and/or license. CI/CD uses github secrets
 Tests/**/License.*
-Tests/**/*Settings.*
-Tests/**/*settings.*
+Tests/**/*Settings.json
+Tests/**/*settings.json
