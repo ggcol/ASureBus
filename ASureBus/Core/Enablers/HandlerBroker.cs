@@ -1,12 +1,14 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Core.Entities;
+using ASureBus.IO.Heavies;
 
 namespace ASureBus.Core.Enablers;
 
 internal sealed class HandlerBroker<TMessage>(
     IHandleMessage<TMessage> handler, 
-    IMessagingContext context)
-    : BrokerBehavior<TMessage>(context), IHandlerBroker<TMessage>
+    IMessagingContext context,
+    IHeavyIO heavyIO)
+    : BrokerBehavior<TMessage>(context, heavyIO), IHandlerBroker<TMessage>
     where TMessage : IAmAMessage
 {
     public async Task<IAsbMessage> Handle(BinaryData binaryData,

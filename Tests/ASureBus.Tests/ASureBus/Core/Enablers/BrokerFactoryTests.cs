@@ -1,6 +1,7 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.TypesHandling.Entities;
+using ASureBus.IO.Heavies;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.Enablers;
@@ -8,12 +9,18 @@ namespace ASureBus.Tests.ASureBus.Core.Enablers;
 [TestFixture]
 public class BrokerFactoryTests
 {
-    private Mock<IServiceProvider> _serviceProviderMock;
+    private readonly IBrokerFactory _factory;
+    private readonly Mock<IServiceProvider> _serviceProviderMock;
 
-    [SetUp]
-    public void SetUp()
+    public BrokerFactoryTests()
     {
+        var heavyIOMock = new Mock<IHeavyIO>();
+        _factory = new BrokerFactory(heavyIOMock.Object);
         _serviceProviderMock = new Mock<IServiceProvider>();
+        
+        _serviceProviderMock
+            .Setup(sp => sp.GetService(typeof(IHeavyIO)))
+            .Returns(new Mock<IHeavyIO>().Object);
     }
 
     [Test]
@@ -30,11 +37,12 @@ public class BrokerFactoryTests
             Type = typeof(FakeHandler)
         };
         var correlationId = Guid.NewGuid();
-        _serviceProviderMock.Setup(sp => sp.GetService(typeof(FakeHandler)))
+        _serviceProviderMock
+            .Setup(sp => sp.GetService(typeof(FakeHandler)))
             .Returns(new FakeHandler());
-
-        // Act
-        var broker = BrokerFactory.Get(_serviceProviderMock.Object, handlerType,
+        
+       // Act
+        var broker = _factory.Get(_serviceProviderMock.Object, handlerType,
             correlationId);
 
         // Assert
@@ -51,9 +59,7 @@ public class BrokerFactoryTests
         }
     }
 
-    private class FakeMessage : IAmACommand
-    {
-    }
+    private class FakeMessage : IAmACommand;
 
     [Test]
     public void Get_SagaBroker_ShouldReturnSagaBrokerInstance()
@@ -80,11 +86,12 @@ public class BrokerFactoryTests
         var correlationId = Guid.NewGuid();
         var implSaga = new FakeSaga();
 
-        _serviceProviderMock.Setup(sp => sp.GetService(typeof(FakeSaga)))
+        _serviceProviderMock
+            .Setup(sp => sp.GetService(typeof(FakeSaga)))
             .Returns(implSaga);
 
         // Act
-        var broker = BrokerFactory.Get(_serviceProviderMock.Object, sagaType, implSaga, listenerType);
+        var broker = _factory.Get(_serviceProviderMock.Object, sagaType, implSaga, listenerType);
 
         // Assert
         Assert.That(broker, Is.Not.Null);
@@ -100,7 +107,5 @@ public class BrokerFactoryTests
         }
     }
 
-    private class FakeSagaData : SagaData
-    {
-    }
+    private class FakeSagaData : SagaData;
 }

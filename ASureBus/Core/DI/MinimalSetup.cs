@@ -23,11 +23,13 @@ using ASureBus.ConfigurationObjects.Config;
 using ASureBus.ConfigurationObjects.Exceptions;
 using ASureBus.ConfigurationObjects.Options;
 using ASureBus.Core.Caching;
+using ASureBus.Core.Enablers;
 using ASureBus.Core.MessageProcessing;
 using ASureBus.Core.MessageProcessing.LockHandling;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling;
+using ASureBus.IO.Heavies;
 using ASureBus.IO.SagaPersistence;
 using ASureBus.IO.ServiceBus;
 using ASureBus.Utils;
@@ -126,20 +128,23 @@ public static class MinimalSetup
             .ConfigureServices((_, services) =>
             {
                 /*
-                 * TODO think of this:
-                 * what's registered here is broad-wide available in the application...
+                 * mind this: what's registered here is broad-wide available in the consumer application...
                  */
                 services
                     .AddSingleton<IAsbCache, AsbCache>()
                     .AddSingleton<IAzureServiceBusService, AzureServiceBusService>()
                     .AddSingleton<ISagaFactory, SagaFactory>()
+                    .AddSingleton<IBrokerFactory, BrokerFactory>()
                     .AddSingleton<IMessagingContext, MessagingContext>()
                     .AddSingleton<IMessageEmitter, MessageEmitter>()
                     .AddSingleton<ISagaIO, SagaIO>()
-                    .AddSingleton<ISagaPersistenceService, SagaUnconfiguredPersistenceService>()
                     .AddSingleton<IProcessSagaMessages, SagaMessagesProcessor>()
                     .AddSingleton<IProcessHandlerMessages, HandlerMessagesProcessor>()
-                    .AddSingleton<IMessageLockObserver, MessageLockObserver>();
+                    .AddSingleton<IMessageLockObserver, MessageLockObserver>()
+                    
+                    // placeholder services, will be replaced if user configures heavies or saga persistence
+                    .AddSingleton<ISagaPersistenceService, SagaUnconfiguredPersistenceService>()
+                    .AddSingleton<IHeavyIO, UnconfiguredHeavyIO>();
 
                 assemblyToScan ??= Assembly.GetEntryAssembly();
 

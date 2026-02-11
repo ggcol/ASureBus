@@ -1,6 +1,7 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
 using ASureBus.Core.Messaging;
+using ASureBus.IO.Heavies;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.Messaging;
@@ -15,7 +16,7 @@ public class MessagingContextTests
     public void SetUp()
     {
         _mockEmitter = new Mock<IMessageEmitter>();
-        _messagingContext = new MessagingContext(_mockEmitter.Object);
+        _messagingContext = new MessagingContext(_mockEmitter.Object, new Mock<IHeavyIO>().Object);
     }
 
     [Test]

@@ -2,40 +2,46 @@ using System.Reflection;
 using System.Text.Json;
 using ASureBus.Abstractions;
 using ASureBus.Core.DI;
+using ASureBus.IntegrationTests.Settings;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace ASureBus.IntegrationTests.TestConfigurations;
 
-public class WithAsbHostAndCheckService
+public abstract class WithAsbHostAndCheckService
 {
-    private readonly IHost _host;
+    private IHost? _host;
     private bool _isDisposed;
-    protected IMessagingContext Context => Get.ServiceFromHost<IMessagingContext>(_host);
-    protected CheckService CheckService => Get.ServiceFromHost<CheckService>(_host);
+    private readonly string? _serviceBusConnectionString;
 
-    protected WithAsbHostAndCheckService()
+    protected readonly IHostBuilder HostBuilder;
+    protected IMessagingContext Context => Get.ServiceFromHost<IMessagingContext>(_host!);
+    protected CheckService CheckService => Get.ServiceFromHost<CheckService>(_host!);
+
+    protected internal WithAsbHostAndCheckService()
     {
-        var serviceBusConnectionString = Environment.GetEnvironmentVariable("ServiceBusConnectionString");
+        _serviceBusConnectionString = Environment.GetEnvironmentVariable("ServiceBusConnectionString");
 
-        if (string.IsNullOrEmpty(serviceBusConnectionString))
+        if (string.IsNullOrEmpty(_serviceBusConnectionString))
         {
-            var raw = File.ReadAllText(Path.Combine(".", "integrationTestsSettings.json"));
+            var raw = File.ReadAllText(Path.Combine("./Settings/", "integrationTestsSettings.json"));
             var settings = JsonSerializer.Deserialize<IntegrationTestsSettings>(raw);
-            serviceBusConnectionString = settings?.ServiceBusConnectionString;
+            _serviceBusConnectionString = settings?.ServiceBusConnectionString;
         }
 
-        var thisAssembly = Assembly.GetExecutingAssembly();
-        var hostBuilder = Host
-            .CreateDefaultBuilder()
-            .UseAsb(opt => { opt.ConnectionString = serviceBusConnectionString; }, thisAssembly)
-            .ConfigureServices(services => { services.AddSingleton<CheckService>(); });
+        CleanServiceBusInfrastructure().GetAwaiter().GetResult();
 
-        _host = hostBuilder.Build();
+        var thisAssembly = Assembly.GetExecutingAssembly();
+        HostBuilder = Host
+            .CreateDefaultBuilder()
+            .UseAsb(opt => { opt.ConnectionString = _serviceBusConnectionString; }, thisAssembly)
+            .ConfigureServices(services => { services.AddSingleton<CheckService>(); });
     }
 
     protected void RunHost()
     {
+        _host = HostBuilder.Build();
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
         _host.RunAsync();
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
@@ -44,9 +50,24 @@ public class WithAsbHostAndCheckService
     protected async Task StopHost()
     {
         if (_isDisposed) return;
-        
+
         _isDisposed = true;
-        await _host.StopAsync().ConfigureAwait(false);
+        await _host!.StopAsync().ConfigureAwait(false);
         _host.Dispose();
+    }
+
+    private async Task CleanServiceBusInfrastructure()
+    {
+        var admClient = new ServiceBusAdministrationClient(_serviceBusConnectionString);
+
+        await foreach (var queue in admClient.GetQueuesAsync())
+        {
+            await admClient.DeleteQueueAsync(queue.Name).ConfigureAwait(false);
+        }
+
+        await foreach (var topic in admClient.GetTopicsAsync())
+        {
+            await admClient.DeleteTopicAsync(topic.Name).ConfigureAwait(false);
+        }
     }
 }

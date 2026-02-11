@@ -1,6 +1,6 @@
 namespace ASureBus.IntegrationTests;
 
-public class CheckService
+public sealed class CheckService
 {
     private readonly object _lock = new();
     

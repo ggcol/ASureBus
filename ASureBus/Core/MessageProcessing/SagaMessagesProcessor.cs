@@ -17,7 +17,8 @@ internal sealed class SagaMessagesProcessor(
     IServiceProvider serviceProvider,
     ISagaIO sagaIo,
     IAsbCache cache,
-    IMessageEmitter messageEmitter)
+    IMessageEmitter messageEmitter,
+    IBrokerFactory brokerFactory)
     : MessageProcessor(logger), IProcessSagaMessages
 {
     public async Task ProcessMessage(SagaType sagaType,
@@ -43,7 +44,7 @@ internal sealed class SagaMessagesProcessor(
                 return;
             }
 
-            var broker = BrokerFactory.Get(serviceProvider, sagaType, saga, listenerType);
+            var broker = brokerFactory.Get(serviceProvider, sagaType, saga, listenerType);
 
             var asbMessage = await broker.Handle(args.Message.Body, args.CancellationToken)
                 .ConfigureAwait(false);
@@ -115,7 +116,7 @@ internal sealed class SagaMessagesProcessor(
             return;
         }
 
-        var broker = BrokerFactory.Get(serviceProvider, sagaType, saga, listenerType);
+        var broker = brokerFactory.Get(serviceProvider, sagaType, saga, listenerType);
 
         await broker.HandleError(ex?.OriginalException!, args.CancellationToken)
             .ConfigureAwait(false);

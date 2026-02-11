@@ -1,10 +1,11 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
+using ASureBus.IO.Heavies;
 
 namespace ASureBus.Core.Messaging;
 
-internal sealed class MessagingContext(IMessageEmitter emitter)
-    : CollectMessage, IMessagingContext
+internal sealed class MessagingContext(IMessageEmitter emitter, IHeavyIO heavyIO)
+    : CollectMessage(heavyIO), IMessagingContext
 {
     public IMessagingContext Bind(Guid correlationId)
     {

@@ -68,7 +68,7 @@ public static class SagaPersistenceSetup
     {
         return hostBuilder.ConfigureServices((_, services) =>
         {
-            RemovePersistencePlaceholderService(services);
+            services.RemoveService<ISagaPersistenceService>();
             
             services
                 .AddScoped<IAzureDataStorageService>(
@@ -128,7 +128,7 @@ public static class SagaPersistenceSetup
     {
         return hostBuilder.ConfigureServices((_, services) =>
         {
-            RemovePersistencePlaceholderService(services);
+            services.RemoveService<ISagaPersistenceService>();
             
             services
                 .AddSingleton<IDbConnectionFactory, SqlServerConnectionFactory>()
@@ -150,7 +150,7 @@ public static class SagaPersistenceSetup
             };
         });
 
-        return ConfigureFileSystemPersistenceDependencies(hostBuilder);
+        return ConfigureDependencies(hostBuilder);
     }
 
     public static IHostBuilder UseFileSystemSagaPersistence(this IHostBuilder hostBuilder,
@@ -160,7 +160,7 @@ public static class SagaPersistenceSetup
 
         AsbConfiguration.FileSystemSagaPersistence = config;
 
-        return ConfigureFileSystemPersistenceDependencies(hostBuilder);
+        return ConfigureDependencies(hostBuilder);
     }
 
     public static IHostBuilder UseFileSystemSagaPersistence(this IHostBuilder hostBuilder,
@@ -177,34 +177,23 @@ public static class SagaPersistenceSetup
             RootDirectoryPath = opt.RootDirectoryPath
         };
 
-        return ConfigureFileSystemPersistenceDependencies(hostBuilder);
+        return ConfigureDependencies(hostBuilder);
     }
 
     public static IHostBuilder UseFileSystemSagaPersistence(this IHostBuilder hostBuilder)
     {
         AsbConfiguration.FileSystemSagaPersistence = new FileSystemSagaPersistenceConfig();
-        return ConfigureFileSystemPersistenceDependencies(hostBuilder);
+        return ConfigureDependencies(hostBuilder);
     }
 
-    private static IHostBuilder ConfigureFileSystemPersistenceDependencies(IHostBuilder hostBuilder)
+    private static IHostBuilder ConfigureDependencies(IHostBuilder hostBuilder)
     {
         return hostBuilder.ConfigureServices(services =>
         {
-            RemovePersistencePlaceholderService(services);
+            services.RemoveService<ISagaPersistenceService>();
 
             services.AddSingleton<IFileSystemService, FileSystemService>();
             services.AddSingleton<ISagaPersistenceService, SagaFileSystemPersistenceService>();
         });
-    }
-
-    private static void RemovePersistencePlaceholderService(IServiceCollection services)
-    {
-        if (services.Count <= 0) return;
-        
-        var service = services.SingleOrDefault(x => x.ServiceType == typeof(ISagaPersistenceService));
-        if (service is not null)
-        {
-            services.Remove(service);
-        }
     }
 }

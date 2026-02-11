@@ -1,6 +1,7 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
 using ASureBus.Core.Messaging;
+using ASureBus.IO.Heavies;
 using Moq;
 
 namespace ASureBus.Tests.ASureBus.Core.Messaging;
@@ -13,7 +14,7 @@ public class MessagingContextInternalTests
     [SetUp]
     public void SetUp()
     {
-        _messagingContext = new MessagingContextInternal();
+        _messagingContext = new MessagingContextInternal(new Mock<IHeavyIO>().Object);
     }
     
     [Test]
@@ -115,7 +116,6 @@ public class MessagingContextInternalTests
         {
             ScheduledTime = DateTimeOffset.UtcNow.AddSeconds(10)
         };
-        
 
         // Act
         await _messagingContext.Publish(message.Object, options);

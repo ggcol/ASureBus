@@ -1,13 +1,23 @@
 ﻿using ASureBus.Abstractions;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.TypesHandling.Entities;
+using ASureBus.IO.Heavies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ASureBus.Core.Enablers;
 
-internal static class BrokerFactory
+internal interface IBrokerFactory
 {
-    internal static IHandlerBroker Get(IServiceProvider serviceProvider,
+    internal IHandlerBroker Get(IServiceProvider serviceProvider,
+        HandlerType handlerType, Guid? correlationId = null);
+
+    internal ISagaBroker Get(IServiceProvider serviceProvider,
+        SagaType sagaType, object? implSaga, ListenerType listenerType);
+}
+
+internal class BrokerFactory(IHeavyIO heavyIO) : IBrokerFactory
+{
+    public IHandlerBroker Get(IServiceProvider serviceProvider,
         HandlerType handlerType, Guid? correlationId = null)
     {
         var implListener = ActivatorUtilities.CreateInstance(
@@ -16,7 +26,7 @@ internal static class BrokerFactory
         var brokerImplType = typeof(HandlerBroker<>)
             .MakeGenericType(handlerType.MessageType.Type);
 
-        var context = new MessagingContextInternal();
+        var context = new MessagingContextInternal(heavyIO);
 
         if (correlationId is not null)
         {
@@ -27,13 +37,13 @@ internal static class BrokerFactory
             serviceProvider, brokerImplType, implListener, context);
     }
 
-    internal static ISagaBroker Get(IServiceProvider serviceProvider,
+    public ISagaBroker Get(IServiceProvider serviceProvider,
         SagaType sagaType, object? implSaga, ListenerType listenerType)
     {
         var brokerImplType = typeof(SagaBroker<,>).MakeGenericType(
             sagaType.SagaDataType, listenerType.MessageType.Type);
 
-        var context = new MessagingContextInternal
+        var context = new MessagingContextInternal(heavyIO)
         {
             CorrelationId = ((implSaga as ISaga)!).CorrelationId
         };

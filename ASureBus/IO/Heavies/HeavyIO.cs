@@ -1,41 +1,28 @@
 ﻿using System.Reflection;
 using ASureBus.Abstractions;
+using ASureBus.Accessories.Heavies;
 using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.IO.StorageAccount;
 
-namespace ASureBus.Accessories.Heavies;
+namespace ASureBus.IO.Heavies;
 
-internal static class HeavyIo
+internal sealed class HeavyIO(IAzureDataStorageService storage, IExpirableHeaviesObserver expirableHeaviesObserver) : IHeavyIO
 {
-    private static IAzureDataStorageService _storage = null!;
-    private static IExpirableHeaviesObserver _expirableHeaviesObserver = null!;
-
-    internal static void ConfigureStorage(
-        IAzureDataStorageService storage,
-        IExpirableHeaviesObserver expirableHeaviesObserver)
+    public bool IsHeavyConfigured => AsbConfiguration.UseHeavyProperties;
+    
+    private void GuardAgainstNotConfigured()
     {
-        _storage = storage;
-        _expirableHeaviesObserver = expirableHeaviesObserver;
+        if (!IsHeavyConfigured) throw new Exception("Heavies not configured");
     }
 
-    public static bool IsHeavyConfigured()
-    {
-        return AsbConfiguration.UseHeavyProperties;
-    }
-
-    private static void GuardAgainstNotConfigured()
-    {
-        if (!IsHeavyConfigured()) throw new Exception("Heavies not configured");
-    }
-
-    public static async Task<IReadOnlyList<HeavyReference>> Unload<TMessage>(
+    public async Task<IReadOnlyList<HeavyReference>> Unload<TMessage>(
         TMessage message, Guid messageId,
         CancellationToken cancellationToken = default)
         where TMessage : IAmAMessage
-    {
+    { 
         GuardAgainstNotConfigured();
 
-        var heavyProps = GetMessageHeavies(message);
+        var heavyProps = GetHeaviesInMessage(message);
 
         var heaviesRef = new List<HeavyReference>();
         if (heavyProps.Length == 0) return heaviesRef;
@@ -46,7 +33,7 @@ internal static class HeavyIo
             var heavy = value as Heavy;
             var heavyId = heavy!.Ref;
 
-            await _storage.Save(value,
+            await storage.Save(value,
                     AsbConfiguration.HeavyProps?.Container!,
                     GetBlobName(messageId, heavyId),
                     false,
@@ -55,7 +42,7 @@ internal static class HeavyIo
 
             if (heavy.HasExpiration)
             {
-                _expirableHeaviesObserver.DeleteOnExpiration(heavy, messageId, cancellationToken);
+                expirableHeaviesObserver.DeleteOnExpiration(heavy, messageId, this, cancellationToken);
             }
 
             heavyProp.SetValue(message, null);
@@ -70,7 +57,7 @@ internal static class HeavyIo
         return heaviesRef;
     }
 
-    private static PropertyInfo[] GetMessageHeavies<TMessage>(TMessage message)
+    private static PropertyInfo[] GetHeaviesInMessage<TMessage>(TMessage message)
         where TMessage : IAmAMessage
     {
         return message
@@ -78,12 +65,11 @@ internal static class HeavyIo
             .GetProperties(BindingFlags.Instance | BindingFlags.Public)
             .Where(prop =>
                 prop.PropertyType.IsGenericType &&
-                prop.PropertyType.GetGenericTypeDefinition() ==
-                typeof(Heavy<>))
+                prop.PropertyType.GetGenericTypeDefinition() == typeof(Heavy<>))
             .ToArray();
     }
 
-    public static async Task Load(object message,
+    public async Task Load(object message,
         IReadOnlyList<HeavyReference> heavies,
         Guid messageId,
         CancellationToken cancellationToken = default)
@@ -92,18 +78,13 @@ internal static class HeavyIo
 
         foreach (var heavyRef in heavies)
         {
-            var prop = message
-                .GetType()
-                .GetProperties()
-                .FirstOrDefault(prop =>
-                    prop.Name.Equals(heavyRef.PropertyName));
+            var prop = GetReferencedProperty(message, heavyRef);
 
-            var propType = prop?.PropertyType.GetGenericArguments()
-                .First();
+            var propType = prop?.PropertyType.GetGenericArguments().First();
 
             var heavyGenericType = typeof(Heavy<>).MakeGenericType(propType!);
 
-            var value = await _storage.Get(
+            var value = await storage.Get(
                     AsbConfiguration.HeavyProps?.Container!,
                     GetBlobName(messageId, heavyRef.Ref),
                     heavyGenericType,
@@ -114,12 +95,25 @@ internal static class HeavyIo
         }
     }
 
-    public static async Task Delete(Guid messageId, Guid heavyReference,
+    private static PropertyInfo? GetReferencedProperty(object message, HeavyReference heavyRef)
+    {
+        return message
+            .GetType()
+            .GetProperties()
+            .FirstOrDefault(prop =>
+                prop.PropertyType.IsGenericType
+                && 
+                prop.PropertyType.GetGenericTypeDefinition() == typeof(Heavy<>)
+                &&
+                prop.Name.Equals(heavyRef.PropertyName));
+    }
+
+    public async Task Delete(Guid messageId, Guid heavyReference,
         CancellationToken cancellationToken = default)
     {
         GuardAgainstNotConfigured();
 
-        await _storage.Delete(
+        await storage.Delete(
                 AsbConfiguration.HeavyProps?.Container!,
                 GetBlobName(messageId, heavyReference),
                 cancellationToken)

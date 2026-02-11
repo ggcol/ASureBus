@@ -2,7 +2,6 @@ using System.Runtime.Serialization;
 using ASureBus.Abstractions;
 using ASureBus.Core.Enablers;
 using ASureBus.Core.Messaging;
-using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling.Entities;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
@@ -13,7 +12,7 @@ internal sealed class HandlerMessagesProcessor(
     IServiceProvider serviceProvider,
     IMessageEmitter messageEmitter,
     ILogger<HandlerMessagesProcessor> logger,
-    ISagaFactory sagaFactory)
+    IBrokerFactory brokerFactory)
     : MessageProcessor(logger), IProcessHandlerMessages
 {
     public async Task ProcessMessage(HandlerType handlerType,
@@ -24,7 +23,7 @@ internal sealed class HandlerMessagesProcessor(
 
         try
         {
-            var broker = BrokerFactory.Get(serviceProvider, handlerType, correlationId);
+            var broker = brokerFactory.Get(serviceProvider, handlerType, correlationId);
 
             var asbMessage = await broker
                 .Handle(args.Message.Body, args.CancellationToken)
@@ -77,7 +76,7 @@ internal sealed class HandlerMessagesProcessor(
     public async Task ProcessError(HandlerType handlerType,
         ProcessErrorEventArgs args)
     {
-        var broker = BrokerFactory.Get(serviceProvider, handlerType);
+        var broker = brokerFactory.Get(serviceProvider, handlerType);
 
         await broker.HandleError(args.Exception, args.CancellationToken)
             .ConfigureAwait(false);
