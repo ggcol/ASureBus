@@ -17,7 +17,7 @@ on:
                 default: '0'
 
 jobs:
-  publish:
+  publish-to-nuget:
     runs-on: ubuntu-latest
     
     services:

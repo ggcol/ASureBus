@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  publish:
+  run-tests-and-upload-coverage:
     runs-on: ubuntu-latest
 
     services:
