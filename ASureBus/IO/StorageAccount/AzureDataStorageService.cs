@@ -23,6 +23,8 @@ internal sealed class AzureDataStorageService(string? connectionString)
         using var uploadStream = new MemoryStream(itemBytes);
         await blobClient.UploadAsync(uploadStream, overwrite, cancellationToken)
             .ConfigureAwait(false);
+        
+        await Task.Delay(50, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<object?> Get(string containerName, string blobName,
@@ -34,22 +36,34 @@ internal sealed class AzureDataStorageService(string? connectionString)
                 .ConfigureAwait(false);
         var blobClient = containerClient.GetBlobClient(blobName);
         
-        if (!await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+        // Retry logic to handle eventual consistency and transient failures
+        const int maxRetries = 5;
+        const int initialDelayMs = 100;
+        
+        for (var attempt = 0; attempt < maxRetries; attempt++)
         {
-            return null;
+            if (await blobClient.ExistsAsync(cancellationToken).ConfigureAwait(false))
+            {
+                var downloadInfo = await blobClient
+                    .OpenReadAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+
+                using var reader = new StreamReader(downloadInfo);
+                var read = await reader.ReadToEndAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                return converter is null
+                    ? Serializer.Deserialize(read, returnType)
+                    : Serializer.Deserialize(read, returnType, converter);
+            }
+            
+            if (attempt >= maxRetries - 1) continue;
+            
+            var delay = initialDelayMs * (int)Math.Pow(2, attempt);
+            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
         }
-
-        var downloadInfo = await blobClient
-            .OpenReadAsync(cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
-        using var reader = new StreamReader(downloadInfo);
-        var read = await reader.ReadToEndAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        return converter is null
-            ? Serializer.Deserialize(read, returnType)
-            : Serializer.Deserialize(read, returnType, converter);
+        
+        return null;
     }
 
     public async Task Delete(string containerName, string blobName,

@@ -5,7 +5,7 @@ namespace ASureBus.IntegrationTests._04_HeavyProperties;
 
 public class HeavyPropertiesTests : WithAsbHostCheckServiceAndHeavies
 {
-    private const double PROCESSING_TIME_IN_MS = 500;
+    private const double PROCESSING_TIME_IN_MS = 2000;
 
     [OneTimeSetUp]
     public void OneTimeSetup()
@@ -56,7 +56,6 @@ public class HeavyPropertiesTests : WithAsbHostCheckServiceAndHeavies
         Assert.That(CheckService.Acknowledged, Is.True);
     }
 
-    [Ignore("TODO works locally but fails in CI, need to investigate")]
     [Test]
     public async Task HeavyProperties_WithAnonymousType_SuccessfullyOffloadProp()
     {

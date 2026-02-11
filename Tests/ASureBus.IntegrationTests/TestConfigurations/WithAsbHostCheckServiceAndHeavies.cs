@@ -26,6 +26,14 @@ public abstract class WithAsbHostCheckServiceAndHeavies : WithAsbHostAndCheckSer
             opt.ConnectionString = _storageAccountConnectionString;
             opt.Container = _container;
         });
+        
+        MakeContainer().GetAwaiter().GetResult();
+    }
+    
+    private async Task MakeContainer()
+    {
+        var containerClient = new BlobContainerClient(_storageAccountConnectionString, _container);
+        await containerClient.CreateIfNotExistsAsync().ConfigureAwait(false);
     }
     
     protected void CleanHeaviesContainer()
