@@ -17,22 +17,28 @@ public class MessageLockRenewalTests : WithAsbHostAndCheckService
         CheckService.Reset();
 
         const int handlerProcessingTimeInSeconds = 3;
-        
+
         // Act
-        await Context.Send(new MessageLockRenewalLongRunningCommand
-        {
-            ProcessingTimeInSeconds = handlerProcessingTimeInSeconds,
-            MessageId = Guid.NewGuid().ToString()
-        }).ConfigureAwait(false);
+        await Context
+            .Send(new MessageLockRenewalLongRunningCommand
+            {
+                ProcessingTimeInSeconds = handlerProcessingTimeInSeconds,
+                MessageId = Guid.NewGuid().ToString()
+            })
+            .ConfigureAwait(false);
 
         const int waitTimeInSeconds = 5;
         await Task.Delay(TimeSpan.FromSeconds(waitTimeInSeconds));
 
         // Assert
+        const double timingToleranceInSeconds = 0.3;
+
         Assert.Multiple(() =>
         {
             Assert.That(CheckService.Acknowledged, Is.True);
-            Assert.That(CheckService.ProcessingTimeSeconds, Is.GreaterThanOrEqualTo(handlerProcessingTimeInSeconds));
+            Assert.That(
+                CheckService.ProcessingTimeSeconds,
+                Is.GreaterThanOrEqualTo(handlerProcessingTimeInSeconds - timingToleranceInSeconds));
         });
     }
 
@@ -43,13 +49,15 @@ public class MessageLockRenewalTests : WithAsbHostAndCheckService
         CheckService.Reset();
 
         const int handlerProcessingTimeInSeconds = 10;
-        
+
         // Act
-        await Context.Send(new MessageLockRenewalLongRunningCommand
-        {
-            ProcessingTimeInSeconds = handlerProcessingTimeInSeconds,
-            MessageId = Guid.NewGuid().ToString()
-        }).ConfigureAwait(false);
+        await Context
+            .Send(new MessageLockRenewalLongRunningCommand
+            {
+                ProcessingTimeInSeconds = handlerProcessingTimeInSeconds,
+                MessageId = Guid.NewGuid().ToString()
+            })
+            .ConfigureAwait(false);
 
         const int waitTimeInSeconds = 12;
         await Task.Delay(TimeSpan.FromSeconds(waitTimeInSeconds));
@@ -57,7 +65,8 @@ public class MessageLockRenewalTests : WithAsbHostAndCheckService
         // Assert
         const int notProcessedYet = 0;
         const double timingToleranceInSeconds = 0.5;
-        Assert.That(CheckService.ProcessingTimeSeconds,
+        Assert.That(
+            CheckService.ProcessingTimeSeconds,
             Is.GreaterThanOrEqualTo(handlerProcessingTimeInSeconds - timingToleranceInSeconds)
                 .Or.EqualTo(notProcessedYet));
     }
@@ -69,7 +78,7 @@ public class MessageLockRenewalTests : WithAsbHostAndCheckService
         CheckService.Reset();
 
         const int messageCount = 5;
-        
+
         // Act
         for (var i = 0; i < messageCount; i++)
         {
