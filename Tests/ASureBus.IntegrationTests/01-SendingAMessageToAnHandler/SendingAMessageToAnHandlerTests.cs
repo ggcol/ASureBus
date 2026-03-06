@@ -4,8 +4,8 @@ namespace ASureBus.IntegrationTests._01_SendingAMessageToAnHandler;
 
 public class SendingAMessageToAnHandlerTests : WithAsbHostAndCheckService
 {
-    [SetUp]
-    public void Setup()
+    [OneTimeSetUp]
+    public void OneTimeSetup()
     {
         RunHost();
     }
@@ -21,8 +21,8 @@ public class SendingAMessageToAnHandlerTests : WithAsbHostAndCheckService
         Assert.That(CheckService.Acknowledged, Is.True);
     }
     
-    [TearDown]
-    public async Task TearDown()
+    [OneTimeTearDown]
+    public async Task OneTimeTearDown()
     {
         await StopHost().ConfigureAwait(false);
     }
