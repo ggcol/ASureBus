@@ -6,9 +6,9 @@ public class PublishingAnEventToConsumerTests : WithAsbHostAndCheckService
 {
     
     [OneTimeSetUp]
-    public void OneTimeSetup()
+    public async Task OneTimeSetup()
     {
-        RunHost();
+        await RunHost().ConfigureAwait(false);
     }
     
     [Test]

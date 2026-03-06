@@ -39,21 +39,30 @@ public abstract class WithAsbHostAndCheckService
             .ConfigureServices(services => { services.AddSingleton<CheckService>(); });
     }
 
-    protected void RunHost()
+    protected async Task RunHost()
     {
         _host = HostBuilder.Build();
-#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        _host.RunAsync();
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        await _host.StartAsync().ConfigureAwait(false);
     }
 
     protected async Task StopHost()
     {
-        if (_isDisposed) return;
+        if (_isDisposed || _host is null) return;
 
         _isDisposed = true;
-        await _host!.StopAsync().ConfigureAwait(false);
-        _host.Dispose();
+        
+        try
+        {
+            await _host.StopAsync().ConfigureAwait(false);
+        }
+        catch
+        {
+            // Host may not have fully started — swallow stop errors
+        }
+        finally
+        {
+            _host.Dispose();
+        }
     }
 
     private async Task CleanServiceBusInfrastructure()

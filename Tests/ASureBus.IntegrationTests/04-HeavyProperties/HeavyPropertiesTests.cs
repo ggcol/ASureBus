@@ -8,9 +8,9 @@ public class HeavyPropertiesTests : WithAsbHostCheckServiceAndHeavies
     private const double PROCESSING_TIME_IN_MS = 2000;
 
     [OneTimeSetUp]
-    public void OneTimeSetup()
+    public async Task OneTimeSetup()
     {
-        RunHost();
+        await RunHost().ConfigureAwait(false);
     }
 
     [SetUp]

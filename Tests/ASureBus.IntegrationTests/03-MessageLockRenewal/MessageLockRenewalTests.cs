@@ -5,9 +5,9 @@ namespace ASureBus.IntegrationTests._03_MessageLockRenewal;
 public class MessageLockRenewalTests : WithAsbHostAndCheckService
 {
     [OneTimeSetUp]
-    public void Setup()
+    public async Task Setup()
     {
-        RunHost();
+        await RunHost().ConfigureAwait(false);
     }
 
     [Test]

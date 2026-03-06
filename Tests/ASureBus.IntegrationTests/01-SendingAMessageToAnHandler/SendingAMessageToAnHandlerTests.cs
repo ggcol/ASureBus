@@ -5,9 +5,9 @@ namespace ASureBus.IntegrationTests._01_SendingAMessageToAnHandler;
 public class SendingAMessageToAnHandlerTests : WithAsbHostAndCheckService
 {
     [OneTimeSetUp]
-    public void OneTimeSetup()
+    public async Task OneTimeSetup()
     {
-        RunHost();
+        await RunHost().ConfigureAwait(false);
     }
     
     [Test]
