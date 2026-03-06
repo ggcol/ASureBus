@@ -69,14 +69,47 @@ public abstract class WithAsbHostAndCheckService
     {
         var admClient = new ServiceBusAdministrationClient(_serviceBusConnectionString);
 
-        await foreach (var queue in admClient.GetQueuesAsync())
-        {
-            await admClient.DeleteQueueAsync(queue.Name).ConfigureAwait(false);
-        }
+        var deletedAny = false;
 
         await foreach (var topic in admClient.GetTopicsAsync())
         {
             await admClient.DeleteTopicAsync(topic.Name).ConfigureAwait(false);
+            deletedAny = true;
+        }
+
+        await foreach (var queue in admClient.GetQueuesAsync())
+        {
+            await admClient.DeleteQueueAsync(queue.Name).ConfigureAwait(false);
+            deletedAny = true;
+        }
+
+        if (!deletedAny) return;
+
+        // Azure Service Bus deletes are asynchronous; entities may remain in a
+        // transitional state for a few seconds. Wait until the namespace is clean
+        // before allowing host startup to recreate them.
+        const int maxWaitAttempts = 15;
+        const int delayMs = 2000;
+
+        for (var i = 0; i < maxWaitAttempts; i++)
+        {
+            await Task.Delay(delayMs).ConfigureAwait(false);
+
+            var hasQueues = false;
+            await foreach (var _ in admClient.GetQueuesAsync())
+            {
+                hasQueues = true;
+                break;
+            }
+
+            var hasTopics = false;
+            await foreach (var _ in admClient.GetTopicsAsync())
+            {
+                hasTopics = true;
+                break;
+            }
+
+            if (!hasQueues && !hasTopics) return;
         }
     }
 }

@@ -49,12 +49,10 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
 
         var admClient = MakeAdmClient();
 
-        if (!await admClient.QueueExistsAsync(queueName, cancellationToken))
-        {
-            var rx = await admClient.CreateQueueAsync(
-                queueName, cancellationToken);
-            queueName = rx.Value.Name;
-        }
+        await EnsureEntity(
+            () => admClient.QueueExistsAsync(queueName, cancellationToken),
+            () => admClient.CreateQueueAsync(queueName, cancellationToken),
+            cancellationToken).ConfigureAwait(false);
 
         return cache.Set(queueName, queueName, AsbConfiguration.Cache.Expiration)!;
     }
@@ -66,12 +64,10 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
 
         var admClient = MakeAdmClient();
 
-        if (!await admClient.TopicExistsAsync(topicName, cancellationToken))
-        {
-            var rx = await admClient.CreateTopicAsync(
-                topicName, cancellationToken);
-            topicName = rx.Value.Name;
-        }
+        await EnsureEntity(
+            () => admClient.TopicExistsAsync(topicName, cancellationToken),
+            () => admClient.CreateTopicAsync(topicName, cancellationToken),
+            cancellationToken).ConfigureAwait(false);
 
         return cache.Set(topicName, topicName, AsbConfiguration.Cache.Expiration)!;
     }
@@ -92,10 +88,10 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
 
         var admClient = MakeAdmClient();
 
-        if (!await admClient.TopicExistsAsync(config.Name, cancellationToken))
-        {
-            _ = await admClient.CreateTopicAsync(config.Name, cancellationToken).ConfigureAwait(false);
-        }
+        await EnsureEntity(
+            () => admClient.TopicExistsAsync(config.Name, cancellationToken),
+            () => admClient.CreateTopicAsync(config.Name, cancellationToken),
+            cancellationToken).ConfigureAwait(false);
 
         var opt = new CreateSubscriptionOptions(config.Name, config.SubscriptionName);
         
@@ -107,10 +103,10 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
             opt.ForwardTo = config.QueueName;
         }
 
-        if (!await admClient.SubscriptionExistsAsync(config.Name, config.SubscriptionName, cancellationToken))
-        {
-            _ = await admClient.CreateSubscriptionAsync(opt, cancellationToken).ConfigureAwait(false);
-        }
+        await EnsureEntity(
+            () => admClient.SubscriptionExistsAsync(config.Name, config.SubscriptionName, cancellationToken),
+            () => admClient.CreateSubscriptionAsync(opt, cancellationToken),
+            cancellationToken).ConfigureAwait(false);
 
         return cache.Set(cacheKey, config, AsbConfiguration.Cache.Expiration)!;
     }
@@ -120,6 +116,44 @@ internal sealed class AzureServiceBusService(IAsbCache cache)
     {
         return new ServiceBusAdministrationClient(AsbConfiguration.ServiceBus
             .ConnectionString);
+    }
+
+    /*
+     * Ensures a Service Bus entity exists, handling concurrent creation and
+     * transient 409/40900 conflicts caused by entities in a transitional
+     * (e.g. being-deleted) state.
+     */
+    private static async Task EnsureEntity(
+        Func<Task<Azure.Response<bool>>> existsAsync,
+        Func<Task> createAsync,
+        CancellationToken cancellationToken,
+        int maxRetries = 10,
+        int delayMs = 3000)
+    {
+        for (var attempt = 0; attempt <= maxRetries; attempt++)
+        {
+            var existsResponse = await existsAsync().ConfigureAwait(false);
+            if (existsResponse.Value) return;
+
+            try
+            {
+                await createAsync().ConfigureAwait(false);
+                return;
+            }
+            catch (ServiceBusException ex) when (
+                ex.Reason == ServiceBusFailureReason.MessagingEntityAlreadyExists)
+            {
+                // Entity exists or is in a transitional state (being deleted).
+                // If it truly exists now, we're done. Otherwise retry after a
+                // short delay to let the delete complete.
+                var recheckResponse = await existsAsync().ConfigureAwait(false);
+                if (recheckResponse.Value) return;
+
+                if (attempt == maxRetries) throw;
+
+                await Task.Delay(delayMs, cancellationToken).ConfigureAwait(false);
+            }
+        }
     }
 
     public ServiceBusSender GetSender(string destination)
