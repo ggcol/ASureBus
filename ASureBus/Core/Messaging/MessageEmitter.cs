@@ -11,10 +11,8 @@ internal sealed class MessageEmitter(IAzureServiceBusService serviceBusService)
     public async Task FlushAll(ICollectMessage collector,
         CancellationToken cancellationToken = default)
     {
-        while (collector.Messages.Count != 0)
+        while (collector.Messages.TryDequeue(out var asbMessage))
         {
-            var asbMessage = collector.Messages.First();
-
             var destination = asbMessage.Header.IsCommand
                 ? await serviceBusService
                     .ConfigureQueue(asbMessage.Header.Destination, cancellationToken)
@@ -34,8 +32,6 @@ internal sealed class MessageEmitter(IAzureServiceBusService serviceBusService)
                 await Emit(asbMessage, destination, cancellationToken)
                     .ConfigureAwait(false);
             }
-
-            collector.Messages.Dequeue();
         }
     }
 
@@ -43,18 +39,18 @@ internal sealed class MessageEmitter(IAzureServiceBusService serviceBusService)
         CancellationToken cancellationToken)
     {
         var sender = serviceBusService.GetSender(destination);
-        
+
         var sbm = ToSdkMessage(message);
 
         await sender.SendMessageAsync(sbm, cancellationToken)
             .ConfigureAwait(false);
     }
-    
+
     private async Task EmitScheduled(IAsbMessage message, string destination,
         DateTimeOffset delay, CancellationToken cancellationToken)
     {
         var sender = serviceBusService.GetSender(destination);
-        
+
         var sbm = ToSdkMessage(message);
 
         await sender.ScheduleMessageAsync(sbm, delay, cancellationToken)

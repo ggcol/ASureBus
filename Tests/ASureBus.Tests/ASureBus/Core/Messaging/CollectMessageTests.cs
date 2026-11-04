@@ -47,7 +47,7 @@ public class CollectMessageTests
         // Act
         await _collectMessage.Enqueue(_mockMessage.Object, scheduledTime, _mockOptions.Object,
             CancellationToken.None);
-        var enqueuedMessage = (AsbMessage<IAmAMessage>)_collectMessage.Messages.Peek();
+        _collectMessage.Messages.TryPeek(out var enqueuedMessage);
 
         // Assert
         Assert.That(enqueuedMessage.Header.ScheduledTime, Is.EqualTo(scheduledTime));

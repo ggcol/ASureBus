@@ -1,4 +1,5 @@
-﻿using ASureBus.Abstractions;
+﻿using System.Collections.Concurrent;
+using ASureBus.Abstractions;
 using ASureBus.Abstractions.Options.Messaging;
 using ASureBus.Accessories.Heavies.Entities;
 using ASureBus.Core.Entities;
@@ -9,7 +10,7 @@ namespace ASureBus.Core.Messaging;
 
 internal abstract class CollectMessage(IHeavyIO heavyIO) : ICollectMessage
 {
-    public Queue<IAsbMessage> Messages { get; } = new();
+    public ConcurrentQueue<IAsbMessage> Messages { get; } = new();
     public Guid CorrelationId { get; set; } = Guid.NewGuid();
 
     protected async Task Enqueue<TMessage>(TMessage message, EmitOptions? options,
