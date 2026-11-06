@@ -14,16 +14,4 @@ internal static class ServiceCollectionExtensions
             services.Remove(service);
         }
     }
-
-    internal static bool TryGetSingleOrDefault<T>(this IServiceCollection services, out T service)
-    {
-        service = default!;
-        if (services.Count <= 0) return false;
-
-        var descriptor = services.SingleOrDefault(x => x.ServiceType == typeof(T));
-        if (descriptor is null) return false;
-
-        service = (T)descriptor.ImplementationInstance!;
-        return true;
-    }
 }

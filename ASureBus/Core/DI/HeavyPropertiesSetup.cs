@@ -77,13 +77,9 @@ public static class HeavyPropertiesSetup
             
             services
                 .AddSingleton<IExpirableHeaviesObserver, ExpirableHeaviesObserver>()
-                .AddSingleton<IHeavyIO, HeavyIO>();
-            
-            if (!services.TryGetSingleOrDefault<IAzureDataStorageService>(out _))
-            {
-                services.AddSingleton<IAzureDataStorageService>(
-                    new AzureDataStorageService(AsbConfiguration.HeavyProps!.ConnectionString));
-            }
+                .AddSingleton<IHeavyIO>(sp => new HeavyIO(
+                    new AzureDataStorageService(AsbConfiguration.HeavyProps!.ConnectionString),
+                    sp.GetRequiredService<IExpirableHeaviesObserver>()));
         });
     }
 }

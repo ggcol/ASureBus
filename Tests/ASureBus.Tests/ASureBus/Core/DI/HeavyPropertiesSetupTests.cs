@@ -1,7 +1,10 @@
-﻿using ASureBus.Abstractions.Configurations;
+﻿using System.Reflection;
+using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core.DI;
 using ASureBus.IO.Heavies;
+using ASureBus.IO.SagaPersistence;
+using ASureBus.IO.StorageAccount;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +15,9 @@ namespace ASureBus.Tests.ASureBus.Core.DI;
 [TestFixture]
 public class HeavyPropertiesSetupTests
 {
+    private const string HEAVIES_ACCOUNT = "HeaviesConnectionString";
+    private const string SAGAS_ACCOUNT = "SagasConnectionString";
+
     private Mock<IHostBuilder> _mockHostBuilder;
     private Mock<IServiceCollection> _mockServiceCollection;
     private HostBuilderContext _hostBuilderContext;
@@ -33,6 +39,7 @@ public class HeavyPropertiesSetupTests
     public void TearDown()
     {
         AsbConfiguration.HeavyProps = null;
+        AsbConfiguration.DataStorageSagaPersistence = null;
         _hostBuilderContext = null!;
     }
 
@@ -107,6 +114,78 @@ public class HeavyPropertiesSetupTests
 
         // Assert
         Assert.That(host.Services.GetService<IHeavyIO>(), Is.InstanceOf<HeavyIO>());
+    }
+
+    [Test]
+    public void UseHeavyProps_BeforeDataStorageSagaPersistence_EachFeatureUsesItsOwnAccount()
+    {
+        // Arrange
+        var hostBuilder = new HostBuilder()
+            .UseHeavyProps(MakeHeavyPropertiesConfig())
+            .UseDataStorageSagaPersistence(MakeDataStorageSagaPersistenceConfig());
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        AssertEachFeatureUsesItsOwnAccount(host);
+    }
+
+    [Test]
+    public void UseHeavyProps_AfterDataStorageSagaPersistence_EachFeatureUsesItsOwnAccount()
+    {
+        // Arrange
+        var hostBuilder = new HostBuilder()
+            .UseDataStorageSagaPersistence(MakeDataStorageSagaPersistenceConfig())
+            .UseHeavyProps(MakeHeavyPropertiesConfig());
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        AssertEachFeatureUsesItsOwnAccount(host);
+    }
+
+    private static HeavyPropertiesConfig MakeHeavyPropertiesConfig()
+    {
+        return new HeavyPropertiesConfig
+        {
+            ConnectionString = HEAVIES_ACCOUNT,
+            Container = "TestContainer"
+        };
+    }
+
+    private static DataStorageSagaPersistenceConfig MakeDataStorageSagaPersistenceConfig()
+    {
+        return new DataStorageSagaPersistenceConfig
+        {
+            ConnectionString = SAGAS_ACCOUNT,
+            Container = "TestContainer"
+        };
+    }
+
+    private static void AssertEachFeatureUsesItsOwnAccount(IHost host)
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(GetAccount(host.Services.GetRequiredService<IHeavyIO>()),
+                Is.EqualTo(HEAVIES_ACCOUNT));
+            Assert.That(GetAccount(host.Services.GetRequiredService<ISagaPersistenceService>()),
+                Is.EqualTo(SAGAS_ACCOUNT));
+        }
+    }
+
+    private static string GetAccount(object storageConsumer)
+    {
+        return GetPrivateField<string>(GetPrivateField<IAzureDataStorageService>(storageConsumer));
+    }
+
+    private static T GetPrivateField<T>(object target)
+    {
+        return (T)target.GetType()
+            .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+            .Single(field => field.FieldType == typeof(T))
+            .GetValue(target)!;
     }
 }
 
