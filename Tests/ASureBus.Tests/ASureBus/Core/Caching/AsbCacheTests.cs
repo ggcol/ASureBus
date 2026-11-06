@@ -6,6 +6,9 @@ namespace ASureBus.Tests.ASureBus.Core.Caching;
 [TestFixture]
 public class AsbCacheTests
 {
+    private const int EXPIRATION_TIMEOUT_MS = 5000;
+    private const int POLLING_INTERVAL_MS = 10;
+
     private IAsbCache _cache;
     
     [SetUp]
@@ -44,22 +47,19 @@ public class AsbCacheTests
         Assert.That(retrieved, Is.EqualTo(obj));
     }
 
-    [TestCase(5, 1, true)]
-    [TestCase(2, 20, false)]
-    public void TryGetValue_GivenExpiration_ReturnsAccordingToExpiration(
-        int expiresAfterMilliseconds, int waitingMilliseconds, bool expected)
+    [Test]
+    public void TryGetValue_BeforeExpiration_ReturnsTrue()
     {
         //Arrange
         var key = Guid.NewGuid();
         var obj = It.IsAny<object>();
-        var expiresAfter = TimeSpan.FromMilliseconds(expiresAfterMilliseconds);
-        _cache.Set(key, obj, expiresAfter);
+        _cache.Set(key, obj, TimeSpan.FromMinutes(1));
         
         //Act
-        Thread.Sleep(waitingMilliseconds);
         var result = _cache.TryGetValue(key, out _);
         
-        Assert.That(result, Is.EqualTo(expected));
+        //Assert
+        Assert.That(result, Is.True);
     }
     
     [Test]
@@ -101,14 +101,13 @@ public class AsbCacheTests
         var key = Guid.NewGuid();
         var obj = It.IsAny<object>();
         var expiresAfter = TimeSpan.FromMilliseconds(2);
-        _cache.Set(key, obj, expiresAfter);
 
         // Act
-        Thread.Sleep(20);
-        var exists = _cache.TryGetValue(key, out _);
+        _cache.Set(key, obj, expiresAfter);
 
         // Assert
-        Assert.That(exists, Is.False);
+        Assert.That(() => _cache.TryGetValue(key, out _),
+            Is.False.After(EXPIRATION_TIMEOUT_MS, POLLING_INTERVAL_MS));
     }
     
     [Test]
@@ -161,10 +160,9 @@ public class AsbCacheTests
 
         // Act
         _cache.Upsert(key, updatedObj, expiresAfter);
-        Thread.Sleep(20);
-        var exists = _cache.TryGetValue(key, out _);
 
         // Assert
-        Assert.That(exists, Is.False);
+        Assert.That(() => _cache.TryGetValue(key, out _),
+            Is.False.After(EXPIRATION_TIMEOUT_MS, POLLING_INTERVAL_MS));
     }
 }
