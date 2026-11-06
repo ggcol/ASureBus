@@ -34,6 +34,7 @@ using ASureBus.IO.SagaPersistence;
 using ASureBus.IO.ServiceBus;
 using ASureBus.Utils;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace ASureBus.Core.DI;
@@ -140,11 +141,11 @@ public static class MinimalSetup
                     .AddSingleton<ISagaIO, SagaIO>()
                     .AddSingleton<IProcessSagaMessages, SagaMessagesProcessor>()
                     .AddSingleton<IProcessHandlerMessages, HandlerMessagesProcessor>()
-                    .AddSingleton<IMessageLockObserver, MessageLockObserver>()
-                    
-                    // placeholder services, will be replaced if user configures heavies or saga persistence
-                    .AddSingleton<ISagaPersistenceService, SagaUnconfiguredPersistenceService>()
-                    .AddSingleton<IHeavyIO, UnconfiguredHeavyIO>();
+                    .AddSingleton<IMessageLockObserver, MessageLockObserver>();
+
+                // placeholder services, used unless user configures heavies or saga persistence
+                services.TryAddSingleton<ISagaPersistenceService, SagaUnconfiguredPersistenceService>();
+                services.TryAddSingleton<IHeavyIO, UnconfiguredHeavyIO>();
 
                 assemblyToScan ??= Assembly.GetEntryAssembly();
 

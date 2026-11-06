@@ -6,6 +6,8 @@ using ASureBus.Core.DI;
 using ASureBus.Core.Messaging;
 using ASureBus.Core.Sagas;
 using ASureBus.Core.TypesHandling;
+using ASureBus.IO.Heavies;
+using ASureBus.IO.SagaPersistence;
 using ASureBus.IO.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,6 +40,9 @@ public class MinimalSetupTests
     public void TearDown()
     {
         _hostBuilderContext = null!;
+        AsbConfiguration.HeavyProps = null;
+        AsbConfiguration.DataStorageSagaPersistence = null;
+        AsbConfiguration.SqlServerSagaPersistence = null;
     }
 
     [Test]
@@ -124,6 +129,88 @@ public class MinimalSetupTests
             s => s.Add(It.Is<ServiceDescriptor>(d =>
                 d.ServiceType == typeof(IHostedService) &&
                 d.ImplementationType == typeof(AsbWorker))), Times.Once);
+    }
+
+    [Test]
+    public void UseAsb_WithoutHeaviesAndSagaPersistence_RegistersPlaceholders()
+    {
+        // Arrange
+        var hostBuilder = Host.CreateDefaultBuilder()
+            .UseEnvironment(Environments.Development)
+            .UseAsb(opt => opt.ConnectionString = "TestConnectionString");
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(host.Services.GetRequiredService<IHeavyIO>(),
+                Is.TypeOf<UnconfiguredHeavyIO>());
+            Assert.That(host.Services.GetRequiredService<ISagaPersistenceService>(),
+                Is.TypeOf<SagaUnconfiguredPersistenceService>());
+        }
+    }
+
+    [Test]
+    public void UseAsb_AfterUseHeavyProps_KeepsHeavyIO()
+    {
+        // Arrange
+        var hostBuilder = Host.CreateDefaultBuilder()
+            .UseEnvironment(Environments.Development)
+            .UseHeavyProps(new HeavyPropertiesConfig
+            {
+                ConnectionString = "TestConnectionString",
+                Container = "TestContainer"
+            })
+            .UseAsb(opt => opt.ConnectionString = "TestConnectionString");
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        Assert.That(host.Services.GetRequiredService<IHeavyIO>(), Is.TypeOf<HeavyIO>());
+    }
+
+    [Test]
+    public void UseAsb_AfterUseDataStorageSagaPersistence_KeepsPersistenceService()
+    {
+        // Arrange
+        var hostBuilder = Host.CreateDefaultBuilder()
+            .UseEnvironment(Environments.Development)
+            .UseDataStorageSagaPersistence(new DataStorageSagaPersistenceConfig
+            {
+                ConnectionString = "TestConnectionString",
+                Container = "TestContainer"
+            })
+            .UseAsb(opt => opt.ConnectionString = "TestConnectionString");
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        Assert.That(host.Services.GetRequiredService<ISagaPersistenceService>(),
+            Is.TypeOf<SagaDataStoragePersistenceService>());
+    }
+
+    [Test]
+    public void UseAsb_AfterUseSqlServerSagaPersistence_KeepsPersistenceService()
+    {
+        // Arrange
+        var hostBuilder = Host.CreateDefaultBuilder()
+            .UseEnvironment(Environments.Development)
+            .UseSqlServerSagaPersistence(new SqlServerSagaPersistenceConfig
+            {
+                ConnectionString = "TestConnectionString"
+            })
+            .UseAsb(opt => opt.ConnectionString = "TestConnectionString");
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        Assert.That(host.Services.GetRequiredService<ISagaPersistenceService>(),
+            Is.TypeOf<SagaSqlServerPersistenceService>());
     }
 }
 
