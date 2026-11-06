@@ -7,7 +7,7 @@ on:
                 description: 'Version to release, e.g. 2.3.0. Needs a draft release and an open milestone with this name'
                 required: true
             dry_run:
-                description: 'Stop after pack: nothing is pushed, tagged or published'
+                description: 'Stop before pushing: nothing is pushed, tagged or published'
                 type: boolean
                 required: true
                 default: true
@@ -15,6 +15,7 @@ on:
 permissions:
   contents: write
   issues: write
+  id-token: write
 
 env:
   GH_REPO: ${{ github.repository }}
@@ -117,16 +118,22 @@ jobs:
           name: packages
           path: ./artifacts/*.nupkg
 
+      - name: Verify Trusted Publishing and get a NuGet API key
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: red.Co
+
       - name: Push ASureBus.Abstractions to NuGet
         if: ${{ !inputs.dry_run }}
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: dotnet nuget push ./artifacts/ASureBus.Abstractions.*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Push ASureBus to NuGet
         if: ${{ !inputs.dry_run }}
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: dotnet nuget push ./artifacts/ASureBus.*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Publish GitHub Release
