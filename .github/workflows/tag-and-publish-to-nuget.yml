@@ -3,18 +3,23 @@ name: Tag and publish to NuGet
 on:
     workflow_dispatch:
         inputs:
-            major:
-                description: 'Major version'
+            version:
+                description: 'Version to release, e.g. 2.3.0. Needs a draft release and an open milestone with this name'
                 required: true
-                default: '2'
-            minor:
-                description: 'Minor version'
+            dry_run:
+                description: 'Stop after pack: nothing is pushed, tagged or published'
+                type: boolean
                 required: true
-                default: '0'
-            patch:
-                description: 'Patch version'
-                required: true
-                default: '0'
+                default: true
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  GH_REPO: ${{ github.repository }}
+  RELEASE_VERSION: ${{ inputs.version }}
+  RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ inputs.version }}
 
 jobs:
   publish-to-nuget:
@@ -40,6 +45,44 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check release preconditions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version '$RELEASE_VERSION' is not in major.minor.patch form"
+            exit 1
+          fi
+
+          failures=0
+          reject() {
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "::warning::$1"
+            else
+              echo "::error::$1"
+              failures=1
+            fi
+          }
+
+          is_draft=$(gh release view "$RELEASE_VERSION" --json isDraft --jq .isDraft 2>/dev/null || true)
+          [ "$is_draft" = "true" ] || reject "No draft release for $RELEASE_VERSION"
+
+          open_issues=$(gh api "repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100" \
+            --jq "map(select(.title == \"$RELEASE_VERSION\")) | first | .open_issues // \"no milestone\"")
+          [ "$open_issues" = "0" ] || reject "Milestone $RELEASE_VERSION is not ready, open issues: $open_issues"
+
+          if [ "$GITHUB_RUN_ATTEMPT" = "1" ]; then
+            for package in asurebus.abstractions asurebus; do
+              if curl -fsS "https://api.nuget.org/v3-flatcontainer/$package/index.json" \
+                | jq -e --arg version "$RELEASE_VERSION" 'any(.versions[]; . == $version)' >/dev/null; then
+                reject "$package $RELEASE_VERSION is already on NuGet: re-run the failed run, a new dispatch could tag a different commit"
+              fi
+            done
+          fi
+
+          exit "$failures"
+
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -61,45 +104,53 @@ jobs:
           StorageAccountConnectionString: ${{ secrets.INTEGRATION_TESTS_STORAGE_ACCOUNT_CONNECTION_STRING }}
         run: dotnet test --configuration Release --no-build --verbosity normal
 
-      - name: Get the latest tag
-        id: get_tag
-        run: echo "::set-output name=TAG::$(git describe --tags --abbrev=0)"
-
-      - name: Create new tag
-        id: create_tag
-        env:
-          MAJOR: "${{ github.event.inputs.major }}"
-          MINOR: "${{ github.event.inputs.minor }}"
-          PATCH: "${{ github.event.inputs.patch }}"
-          GITHUB_TOKEN: ${{ secrets.ASUREBUS_PAT }}
-        run: |
-          NEW_TAG="${MAJOR}.${MINOR}.${PATCH}"
-          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-          git tag "$NEW_TAG"
-          git push origin "$NEW_TAG"
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.ASUREBUS_PAT }}
-        with:
-          tag_name: ${{ env.NEW_TAG }}
-          release_name: "Release ${{ env.NEW_TAG }}"
-          draft: false
-          prerelease: false
-
       - name: Pack ASureBus.Abstractions
-        run: dotnet pack ASureBus.Abstractions/ASureBus.Abstractions.csproj --configuration Release --output ./artifacts /p:PackageVersion=${{ env.NEW_TAG }}
+        run: dotnet pack ASureBus.Abstractions/ASureBus.Abstractions.csproj --configuration Release --output ./artifacts /p:Version=$RELEASE_VERSION /p:PackageReleaseNotes=$RELEASE_URL
 
       - name: Pack ASureBus
-        run: dotnet pack ASureBus/ASureBus.csproj --configuration Release --output ./artifacts /p:PackageVersion=${{ env.NEW_TAG }}
+        run: dotnet pack ASureBus/ASureBus.csproj --configuration Release --output ./artifacts /p:Version=$RELEASE_VERSION /p:PackageReleaseNotes=$RELEASE_URL
+
+      - name: Upload packages for inspection
+        if: ${{ inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: ./artifacts/*.nupkg
 
       - name: Push ASureBus.Abstractions to NuGet
+        if: ${{ !inputs.dry_run }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: dotnet nuget push ./artifacts/ASureBus.Abstractions.*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
 
       - name: Push ASureBus to NuGet
+        if: ${{ !inputs.dry_run }}
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: dotnet nuget push ./artifacts/ASureBus.*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Publish GitHub Release
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$RELEASE_VERSION" --draft=false --latest --target "$GITHUB_SHA"
+
+  close-milestone:
+    needs: publish-to-nuget
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Comment on the released issues
+        run: |
+          for issue in $(gh issue list --milestone "$RELEASE_VERSION" --state closed --limit 200 --json number --jq '.[].number'); do
+            gh issue comment "$issue" --body "Released in [$RELEASE_VERSION]($RELEASE_URL)."
+          done
+
+      - name: Close the milestone
+        run: |
+          milestone=$(gh api "repos/$GITHUB_REPOSITORY/milestones?state=open&per_page=100" \
+            --jq "map(select(.title == \"$RELEASE_VERSION\")) | first | .number")
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/milestones/$milestone" -f state=closed --silent
