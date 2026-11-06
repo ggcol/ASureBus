@@ -64,7 +64,7 @@ jobs:
           echo "$COBERTURA_FILES"
           for file in $COBERTURA_FILES; do
               echo "Uploading: $file"
-              bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r "$file"
+              bash <(curl -Ls https://coverage.codacy.com/get.sh) report --partial -r "$file"
           done
           echo "Notifying Codacy that all reports have been uploaded"
           bash <(curl -Ls https://coverage.codacy.com/get.sh) final
