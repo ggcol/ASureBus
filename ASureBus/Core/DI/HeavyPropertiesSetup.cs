@@ -26,10 +26,9 @@ public static class HeavyPropertiesSetup
                 ConnectionString = settings.ConnectionString,
                 Container = settings.Container
             };
-            
-            ConfigureDependencies(hostBuilder);
         });
 
+        ConfigureDependencies(hostBuilder);
 
         return hostBuilder;
     }

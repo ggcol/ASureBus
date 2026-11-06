@@ -1,6 +1,7 @@
 ﻿using ASureBus.Abstractions.Configurations;
 using ASureBus.ConfigurationObjects.Config;
 using ASureBus.Core.DI;
+using ASureBus.IO.Heavies;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -93,6 +94,19 @@ public class HeavyPropertiesSetupTests
             Assert.That(AsbConfiguration.HeavyProps.Container,
                 Is.EqualTo("TestContainer"));
         }
+    }
+
+    [Test]
+    public void UseHeavyProps_WithSettings_BuildsRealHost()
+    {
+        // Arrange
+        var hostBuilder = new HostBuilder().UseHeavyProps<HeavyPropertiesSettings>();
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        Assert.That(host.Services.GetService<IHeavyIO>(), Is.InstanceOf<HeavyIO>());
     }
 }
 
