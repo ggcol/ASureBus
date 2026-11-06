@@ -151,6 +151,47 @@ public class SagaPersistenceSetupTests
                 d.ServiceType == typeof(ISagaPersistenceService))),
             Times.Once);
     }
+
+    [Test]
+    public void UseDataStorageSagaPersistence_InDevelopment_HostBuilds()
+    {
+        // Arrange
+        var hostBuilder = Host.CreateDefaultBuilder()
+            .UseEnvironment(Environments.Development)
+            .UseAsb(opt => opt.ConnectionString = "TestConnectionString")
+            .UseDataStorageSagaPersistence(new DataStorageSagaPersistenceConfig
+            {
+                ConnectionString = "TestConnectionString",
+                Container = "TestContainer"
+            });
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        Assert.That(host.Services.GetRequiredService<ISagaPersistenceService>(),
+            Is.TypeOf<SagaDataStoragePersistenceService>());
+    }
+
+    [Test]
+    public void UseSqlServerSagaPersistence_InDevelopment_HostBuilds()
+    {
+        // Arrange
+        var hostBuilder = Host.CreateDefaultBuilder()
+            .UseEnvironment(Environments.Development)
+            .UseAsb(opt => opt.ConnectionString = "TestConnectionString")
+            .UseSqlServerSagaPersistence(new SqlServerSagaPersistenceConfig
+            {
+                ConnectionString = "TestConnectionString"
+            });
+
+        // Act
+        using var host = hostBuilder.Build();
+
+        // Assert
+        Assert.That(host.Services.GetRequiredService<ISagaPersistenceService>(),
+            Is.TypeOf<SagaSqlServerPersistenceService>());
+    }
 }
 
 internal class DataStorageSagaPersistenceSettings : IConfigureDataStorageSagaPersistence

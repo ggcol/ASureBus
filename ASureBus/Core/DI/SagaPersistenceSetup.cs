@@ -71,9 +71,9 @@ public static class SagaPersistenceSetup
             services.RemoveService<ISagaPersistenceService>();
             
             services
-                .AddScoped<IAzureDataStorageService>(
+                .AddSingleton<IAzureDataStorageService>(
                     _ => new AzureDataStorageService(AsbConfiguration.DataStorageSagaPersistence?.ConnectionString!))
-                .AddScoped<ISagaPersistenceService, SagaDataStoragePersistenceService>();
+                .AddSingleton<ISagaPersistenceService, SagaDataStoragePersistenceService>();
         });
     }
 
@@ -132,8 +132,8 @@ public static class SagaPersistenceSetup
             
             services
                 .AddSingleton<IDbConnectionFactory, SqlServerConnectionFactory>()
-                .AddScoped<ISqlServerService, SqlServerService>()
-                .AddScoped<ISagaPersistenceService, SagaSqlServerPersistenceService>();
+                .AddSingleton<ISqlServerService, SqlServerService>()
+                .AddSingleton<ISagaPersistenceService, SagaSqlServerPersistenceService>();
         });
     }
 
